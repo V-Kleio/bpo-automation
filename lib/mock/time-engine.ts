@@ -2,13 +2,15 @@
 import { useStore } from "@/lib/store";
 import { uid } from "@/lib/utils";
 import {
-  STEP_TO_ROLE,
   type CampaignLead,
   type CampaignStage,
   type Touchpoint,
 } from "@/lib/types";
-import { createTouchpoint } from "./outreach-engine";
 import { syncDealFromStage, recordDealActivity } from "./crm-sync";
+import {
+  emitLinkedInAction,
+  emitEmailAction,
+} from "@/lib/services/outreach-gateway";
 import { toast } from "sonner";
 
 const BASE_TICK_MS = 600;
@@ -180,20 +182,13 @@ function addTouchpoint(
   nowIso: string,
   channel: Touchpoint["channel"],
 ): void {
-  const tp = createTouchpoint({ companyId, step, type, channel, nowIso });
-  if (!tp) return;
-  useStore.getState().appendTouchpoint(companyId, tp);
-  useStore.getState().log({
-    layer: 3,
-    type: type === "reply_received" ? "reply" : "channel_send",
-    summary: tp.messagePreview,
-    companyId,
-    at: nowIso,
-  });
-  recordDealActivity(companyId, {
-    id: uid("act"),
-    at: nowIso,
-    type: type === "reply_received" ? "reply" : "touchpoint",
-    summary: tp.messagePreview,
-  });
+  // Fire-and-forget through the outreach gateway. Gateway routes
+  // LinkedIn actions through /api/linkedin/send when a real provider
+  // is configured; otherwise it falls back to the local simulation.
+  const input = { companyId, step, type, nowIso };
+  if (channel === "linkedin") {
+    void emitLinkedInAction(input);
+  } else {
+    void emitEmailAction(input);
+  }
 }
