@@ -39,6 +39,10 @@ interface State {
   setLeadStatus: (id: string, status: LeadStatus) => void;
   setAnalysis: (id: string, analysis: AIAnalysis) => void;
 
+  // Import
+  addCompanies: (companies: Company[]) => number;
+  addStakeholders: (stakeholders: Stakeholder[]) => number;
+
   // Campaign mutations
   pushToCampaign: (companyId: string) => void;
   updateCampaignStage: (
@@ -107,6 +111,41 @@ export const useStore = create<State>()(
             c.id === id ? { ...c, analysis, status: "qualified" } : c,
           ),
         })),
+
+      addCompanies: (newCompanies) => {
+        let added = 0;
+        set((s) => {
+          const existing = new Set(s.companies.map((c) => c.id));
+          const byName = new Set(s.companies.map((c) => c.name.toLowerCase()));
+          const filtered = newCompanies.filter((c) => {
+            if (existing.has(c.id)) return false;
+            if (byName.has(c.name.toLowerCase())) return false;
+            existing.add(c.id);
+            byName.add(c.name.toLowerCase());
+            added += 1;
+            return true;
+          });
+          if (filtered.length === 0) return {};
+          return { companies: [...s.companies, ...filtered] };
+        });
+        return added;
+      },
+
+      addStakeholders: (newStakeholders) => {
+        let added = 0;
+        set((s) => {
+          const existing = new Set(s.stakeholders.map((x) => x.id));
+          const filtered = newStakeholders.filter((x) => {
+            if (existing.has(x.id)) return false;
+            existing.add(x.id);
+            added += 1;
+            return true;
+          });
+          if (filtered.length === 0) return {};
+          return { stakeholders: [...s.stakeholders, ...filtered] };
+        });
+        return added;
+      },
 
       pushToCampaign: (companyId) => {
         const now = new Date().toISOString();

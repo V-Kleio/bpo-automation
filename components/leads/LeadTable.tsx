@@ -9,6 +9,7 @@ import { TierBadge } from "./TierBadge";
 import { IntentSignalList } from "./IntentSignalChip";
 import { StatusPill } from "./StatusPill";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
+import { ImportLeadsButton } from "./ImportLeadsButton";
 import { analyzeLeads } from "@/lib/mock/ai-engine";
 import { Brain, Search, Filter } from "lucide-react";
 import type { Tier, LeadStatus } from "@/lib/types";
@@ -132,6 +133,7 @@ export function LeadTable() {
             {selected.size > 0 ? `${selected.size} selected · ` : ""}
             {filtered.length} of {companies.length} leads
           </span>
+          <ImportLeadsButton />
           <Button
             variant="accent"
             size="md"
