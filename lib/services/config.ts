@@ -33,7 +33,7 @@ export function getServerConfig() {
       hasKey: anthropicKey.length > 0,
       apiKey: anthropicKey,
       modelAnalyze:
-        trim(process.env.CLAUDE_MODEL_ANALYZE) || "claude-sonnet-4-6",
+        trim(process.env.CLAUDE_MODEL_ANALYZE) || "claude-opus-4-7",
       modelChat:
         trim(process.env.CLAUDE_MODEL_CHAT) || "claude-haiku-4-5",
     },
