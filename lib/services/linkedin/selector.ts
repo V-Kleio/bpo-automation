@@ -1,5 +1,6 @@
 import "server-only";
 import { MockLinkedInAdapter } from "./adapter-mock";
+import { PlaywrightLinkedInAdapter } from "./adapter-playwright";
 import {
   getServerConfig,
   selectLinkedInProvider,
@@ -25,10 +26,12 @@ export function selectAdapter(): ProviderSelection {
 
   let adapter: LinkedInAdapter;
   switch (provider) {
-    // Real adapters land in subsequent commits.
+    case "playwright":
+      adapter = new PlaywrightLinkedInAdapter();
+      break;
+    // Unipile and MCP adapters land in the next commit.
     case "unipile":
     case "mcp":
-    case "playwright":
     case "mock":
     default:
       adapter = new MockLinkedInAdapter();
