@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
-import { streamAskAI } from "@/lib/mock/ai-engine";
+import { streamAskAI } from "@/lib/services/ai-router";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Send, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
