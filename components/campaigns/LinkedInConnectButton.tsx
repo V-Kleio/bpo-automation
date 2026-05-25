@@ -1,11 +1,10 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   LinkIcon,
   Loader2,
   CheckCircle2,
-  XCircle,
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,14 +29,7 @@ export function LinkedInConnectButton() {
   const [connecting, setConnecting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    refreshStatus();
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  async function refreshStatus() {
+  const refreshStatus = useCallback(async () => {
     invalidateClientConfig();
     try {
       const [cfg, statusResp] = await Promise.all([
@@ -53,7 +45,14 @@ export function LinkedInConnectButton() {
     } catch {
       setAvailable(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void refreshStatus();
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [refreshStatus]);
 
   async function startConnect() {
     setConnecting(true);
