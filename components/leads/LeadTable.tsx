@@ -11,7 +11,7 @@ import { StatusPill } from "./StatusPill";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import { ImportLeadsButton } from "./ImportLeadsButton";
 import { HubSpotSyncButton } from "./HubSpotSyncButton";
-import { analyzeLeads } from "@/lib/mock/ai-engine";
+import { analyzeLeads } from "@/lib/services/ai-router";
 import { Brain, Search, Filter } from "lucide-react";
 import type { Tier, LeadStatus } from "@/lib/types";
 import { toast } from "sonner";
