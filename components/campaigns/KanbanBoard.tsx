@@ -4,12 +4,14 @@ import { useStore } from "@/lib/store";
 import { CompanyCard } from "./CompanyCard";
 import { StageBadge, STAGES_ORDERED, STAGE_CONFIG } from "./StageBadge";
 import { StakeholderThreadDrawer } from "./StakeholderThreadDrawer";
+import { ChannelTabs, type ChannelFilter } from "./ChannelTabs";
 import type { CampaignStage } from "@/lib/types";
 
 export function KanbanBoard() {
   const campaigns = useStore((s) => s.campaigns);
   const now = useStore((s) => s.clock.simulatedTime);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [channel, setChannel] = useState<ChannelFilter>("all");
 
   const byStage = useMemo(() => {
     const map = new Map<CampaignStage, typeof campaigns>();
@@ -44,6 +46,9 @@ export function KanbanBoard() {
 
   return (
     <>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <ChannelTabs value={channel} onChange={setChannel} />
+      </div>
       <div className="overflow-x-auto">
         <div className="flex min-w-max gap-3 pb-2">
           {STAGES_ORDERED.map((stage) => {
@@ -73,6 +78,7 @@ export function KanbanBoard() {
                       campaign={c}
                       onOpen={() => setOpenId(c.companyId)}
                       nowIso={now}
+                      channelFilter={channel}
                     />
                   ))}
                 </div>

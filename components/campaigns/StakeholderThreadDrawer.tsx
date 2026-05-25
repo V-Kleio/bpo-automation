@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useStore, selectCompany, selectCampaign } from "@/lib/store";
 import { Drawer } from "@/components/ui/drawer";
@@ -7,6 +8,7 @@ import { StageBadge } from "./StageBadge";
 import {
   ROLE_LABEL,
   STEP_TO_ROLE,
+  type Channel,
   type Stakeholder,
   type Touchpoint,
 } from "@/lib/types";
@@ -21,6 +23,8 @@ import {
 } from "lucide-react";
 import { LinkedinIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
+import { getClientConfig } from "@/lib/services/public-config-client";
+import type { LinkedInProvider } from "@/lib/services/config";
 
 export function StakeholderThreadDrawer({
   companyId,
@@ -41,6 +45,19 @@ export function StakeholderThreadDrawer({
     ),
   );
   const now = useStore((s) => s.clock.simulatedTime);
+  const [provider, setProvider] = useState<LinkedInProvider>("mock");
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    getClientConfig()
+      .then((cfg) => {
+        setProvider(cfg.linkedin.provider);
+        setAuthenticated(cfg.linkedin.authenticated);
+      })
+      .catch(() => {});
+  }, []);
+
+  const linkedinIsLive = provider !== "mock" && authenticated;
 
   return (
     <Drawer
@@ -119,19 +136,23 @@ export function StakeholderThreadDrawer({
                           />
                         </div>
 
-                        {/* Touchpoints */}
-                        {tps.length > 0 && (
-                          <ul className="mt-2 space-y-1.5">
-                            {tps.map((t) => (
-                              <TouchpointRow
-                                key={t.id}
-                                tp={t}
-                                stakeholder={stakeholder}
-                                now={now}
-                              />
-                            ))}
-                          </ul>
-                        )}
+                        {/* Touchpoints split by channel */}
+                        <ChannelSection
+                          channel="linkedin"
+                          tps={tps.filter((t) => t.channel === "linkedin")}
+                          stakeholder={stakeholder}
+                          now={now}
+                          live={linkedinIsLive}
+                          providerLabel={provider}
+                        />
+                        <ChannelSection
+                          channel="email"
+                          tps={tps.filter((t) => t.channel === "email")}
+                          stakeholder={stakeholder}
+                          now={now}
+                          live={false}
+                          providerLabel="mock"
+                        />
                       </div>
                     </div>
                   </li>
@@ -198,6 +219,53 @@ function StepStatus({
     <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
       Pending
     </span>
+  );
+}
+
+function ChannelSection({
+  channel,
+  tps,
+  stakeholder,
+  now,
+  live,
+  providerLabel,
+}: {
+  channel: Channel;
+  tps: Touchpoint[];
+  stakeholder?: Stakeholder;
+  now: string;
+  live: boolean;
+  providerLabel: LinkedInProvider;
+}) {
+  if (tps.length === 0) return null;
+  const Icon = channel === "linkedin" ? LinkedinIcon : Mail;
+  return (
+    <div className="mt-2.5">
+      <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        <span className="inline-flex items-center gap-1">
+          <Icon className="h-3 w-3" />
+          {channel === "linkedin" ? "LinkedIn" : "Email"}
+          <span className="text-zinc-400 normal-case font-normal">
+            · {tps.length}
+          </span>
+        </span>
+        <span
+          className={cn(
+            "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
+            live
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-zinc-100 text-zinc-500",
+          )}
+        >
+          {live ? `Live · ${providerLabel}` : "Simulated"}
+        </span>
+      </div>
+      <ul className="space-y-1.5">
+        {tps.map((t) => (
+          <TouchpointRow key={t.id} tp={t} stakeholder={stakeholder} now={now} />
+        ))}
+      </ul>
+    </div>
   );
 }
 

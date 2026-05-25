@@ -3,17 +3,21 @@ import { useStore, selectCompany } from "@/lib/store";
 import { TierBadge } from "@/components/leads/TierBadge";
 import { ROLE_LABEL, type CampaignLead } from "@/lib/types";
 import { formatRelative } from "@/lib/utils";
-import { Clock } from "lucide-react";
+import { Clock, Mail } from "lucide-react";
+import { LinkedinIcon } from "@/components/ui/icons";
 import { STEP_TO_ROLE } from "@/lib/types";
+import type { ChannelFilter } from "./ChannelTabs";
 
 export function CompanyCard({
   campaign,
   onOpen,
   nowIso,
+  channelFilter = "all",
 }: {
   campaign: CampaignLead;
   onOpen: () => void;
   nowIso: string;
+  channelFilter?: ChannelFilter;
 }) {
   const company = useStore((s) => selectCompany(campaign.companyId)(s));
   const stakeholder = useStore((s) =>
@@ -23,7 +27,17 @@ export function CompanyCard({
         st.role === STEP_TO_ROLE[campaign.activeStep],
     ),
   );
-  const lastTp = campaign.touchpoints[campaign.touchpoints.length - 1];
+  const filteredTouchpoints =
+    channelFilter === "all"
+      ? campaign.touchpoints
+      : campaign.touchpoints.filter((t) => t.channel === channelFilter);
+  const lastTp = filteredTouchpoints[filteredTouchpoints.length - 1];
+  const linkedinCount = campaign.touchpoints.filter(
+    (t) => t.channel === "linkedin",
+  ).length;
+  const emailCount = campaign.touchpoints.filter(
+    (t) => t.channel === "email",
+  ).length;
 
   if (!company) return null;
 
@@ -101,16 +115,38 @@ export function CompanyCard({
       )}
 
       {/* Footer */}
-      <div className="mt-2.5 flex items-center justify-between text-[10px] text-zinc-500">
+      <div className="mt-2.5 flex items-center justify-between gap-2 text-[10px] text-zinc-500">
         <span className="inline-flex items-center gap-1">
           <Clock className="h-2.5 w-2.5" />
           {lastTp
             ? `${formatRelative(lastTp.sentAt, nowIso)}`
-            : "Awaiting first touch"}
+            : channelFilter === "all"
+              ? "Awaiting first touch"
+              : `No ${channelFilter} yet`}
         </span>
-        <span>
-          {campaign.touchpoints.length} touchpoint
-          {campaign.touchpoints.length === 1 ? "" : "s"}
+        <span className="inline-flex items-center gap-1.5">
+          {(channelFilter === "all" || channelFilter === "linkedin") && (
+            <span
+              className={
+                "inline-flex items-center gap-0.5 " +
+                (linkedinCount > 0 ? "text-blue-700" : "text-zinc-400")
+              }
+            >
+              <LinkedinIcon className="h-2.5 w-2.5" />
+              {linkedinCount}
+            </span>
+          )}
+          {(channelFilter === "all" || channelFilter === "email") && (
+            <span
+              className={
+                "inline-flex items-center gap-0.5 " +
+                (emailCount > 0 ? "text-indigo-700" : "text-zinc-400")
+              }
+            >
+              <Mail className="h-2.5 w-2.5" />
+              {emailCount}
+            </span>
+          )}
         </span>
       </div>
     </button>
