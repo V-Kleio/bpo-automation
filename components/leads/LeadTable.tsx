@@ -10,6 +10,7 @@ import { IntentSignalList } from "./IntentSignalChip";
 import { StatusPill } from "./StatusPill";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import { ImportLeadsButton } from "./ImportLeadsButton";
+import { HubSpotSyncButton } from "./HubSpotSyncButton";
 import { analyzeLeads } from "@/lib/mock/ai-engine";
 import { Brain, Search, Filter } from "lucide-react";
 import type { Tier, LeadStatus } from "@/lib/types";
@@ -134,6 +135,7 @@ export function LeadTable() {
             {filtered.length} of {companies.length} leads
           </span>
           <ImportLeadsButton />
+          <HubSpotSyncButton />
           <Button
             variant="accent"
             size="md"
