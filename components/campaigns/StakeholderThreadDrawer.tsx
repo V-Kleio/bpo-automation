@@ -25,6 +25,8 @@ import { LinkedinIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { getClientConfig } from "@/lib/services/public-config-client";
 import type { LinkedInProvider } from "@/lib/services/config";
+import { StepActions } from "./StepActions";
+import { CampaignTerminalActions } from "./CampaignTerminalActions";
 
 export function StakeholderThreadDrawer({
   companyId,
@@ -153,12 +155,29 @@ export function StakeholderThreadDrawer({
                           live={false}
                           providerLabel="mock"
                         />
+
+                        {stakeholder && campaign.activeStep === step && (
+                          <StepActions
+                            company={company}
+                            campaign={campaign}
+                            stakeholder={stakeholder}
+                            step={step}
+                            linkedinIsLive={linkedinIsLive}
+                          />
+                        )}
                       </div>
                     </div>
                   </li>
                 );
               })}
             </ol>
+          </div>
+
+          <div className="border-t border-zinc-200 pt-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Campaign actions
+            </h3>
+            <CampaignTerminalActions company={company} campaign={campaign} />
           </div>
         </div>
       )}

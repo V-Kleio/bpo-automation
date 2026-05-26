@@ -99,8 +99,11 @@ company names so you can drive the whole pipeline:
    API if `ANTHROPIC_API_KEY` is set).
 3. **Push to Campaign** from `/intelligence`.
 4. On `/campaigns`, **Connect LinkedIn** if Playwright is the active
-   provider, then start the simulation. LinkedIn sends flow through your
-   chosen adapter; email stays simulated.
+   provider. Open a company card → drawer shows each step with explicit
+   **Send connection**, **Send LinkedIn DM**, **Send email** (simulated),
+   and **Mark replied** buttons. Each click fires the real adapter (or the
+   simulated path when no real provider is connected) and records a
+   touchpoint with the provider name in its log entry.
 
 ## Architecture notes
 
