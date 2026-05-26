@@ -322,36 +322,107 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
         };
       }
 
-      // Optional connection note dialog.
+      // After clicking Connect, LinkedIn opens an invitation dialog.
+      // Wait for it to appear — if it never does, the request was NOT
+      // sent (regardless of how the previous click looked).
+      await sleep(1200);
+      const dialog = page.locator('[role="dialog"]').first();
+      const dialogOpened = await dialog
+        .isVisible({ timeout: 5000 })
+        .catch(() => false);
+      if (!dialogOpened) {
+        const screenshot = await saveDebugScreenshot(page, "no-invite-dialog");
+        return {
+          success: false,
+          provider: this.provider,
+          error: `Clicked Connect but the invitation dialog never opened. LinkedIn may have rate-limited connections, or the "Connect" item in the More menu was actually labeled differently (e.g. "Remove Connection"). Screenshot: ${screenshot}`,
+        };
+      }
+      await saveDebugScreenshot(page, "invite-dialog");
+
+      // If we have a note and the dialog accepts one, fill it.
       if (input.note) {
-        const addNote = page.getByRole("button", { name: /add a note/i });
-        if (await addNote.isVisible({ timeout: 2500 }).catch(() => false)) {
-          await addNote.click({ timeout: ACTION_TIMEOUT_MS });
-          const textarea = page.getByRole("textbox").first();
-          for (const ch of input.note.slice(0, 280)) {
-            await textarea.type(ch);
+        const directBox = dialog.locator('textarea, [role="textbox"]').first();
+        let composed = false;
+        if (await directBox.isVisible({ timeout: 1500 }).catch(() => false)) {
+          await directBox.click().catch(() => {});
+          await sleep(200);
+          for (const ch of input.note.slice(0, 200)) {
+            await page.keyboard.type(ch);
             await sleep(keystrokeDelay());
+          }
+          composed = true;
+        }
+        if (!composed) {
+          const addNote = dialog
+            .getByRole("button", { name: /add (a |free )?note/i })
+            .first();
+          if (
+            await addNote.isVisible({ timeout: 1500 }).catch(() => false)
+          ) {
+            await addNote.click({ timeout: ACTION_TIMEOUT_MS });
+            await sleep(500);
+            const box = dialog
+              .locator('textarea, [role="textbox"]')
+              .first();
+            if (await box.isVisible({ timeout: 2000 }).catch(() => false)) {
+              for (const ch of input.note.slice(0, 200)) {
+                await page.keyboard.type(ch);
+                await sleep(keystrokeDelay());
+              }
+            }
           }
         }
       }
 
-      const send = page.getByRole("button", { name: /^Send( now)?$/i }).first();
-      if (await send.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await send.click({ timeout: ACTION_TIMEOUT_MS });
-      } else {
-        // Some flows have an automatic send when no note is added.
-        const sendWithoutNote = page
-          .getByRole("button", { name: /send without/i })
-          .first();
-        if (
-          await sendWithoutNote
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
-        ) {
-          await sendWithoutNote.click({ timeout: ACTION_TIMEOUT_MS });
+      // Click whichever "send" variant LinkedIn shows in this dialog.
+      // Try most specific first. NEVER fall through to a generic page
+      // button — must be inside the dialog so we don't click navbar.
+      const sendLabels = [
+        /^Send invitation$/i,
+        /^Send now$/i,
+        /^Send$/i,
+        /^Send without (a )?note$/i,
+        /^Send anyway$/i,
+      ];
+      let sendClicked = false;
+      for (const label of sendLabels) {
+        const btn = dialog.getByRole("button", { name: label }).first();
+        if (await btn.isVisible({ timeout: 600 }).catch(() => false)) {
+          await btn.click({ timeout: ACTION_TIMEOUT_MS });
+          sendClicked = true;
+          break;
         }
       }
-      await sleep(1500);
+      if (!sendClicked) {
+        const screenshot = await saveDebugScreenshot(
+          page,
+          "no-send-in-dialog",
+        );
+        return {
+          success: false,
+          provider: this.provider,
+          error: `Invitation dialog opened but no Send button matched (looked for: Send invitation / Send now / Send / Send without note / Send anyway). Screenshot: ${screenshot}`,
+        };
+      }
+
+      // The dialog dismissing is LinkedIn's confirmation that the invite
+      // was queued. If the dialog stays open, the request did NOT go
+      // through (e.g. weekly limit reached, error toast inside dialog).
+      const dismissed = await dialog
+        .waitFor({ state: "hidden", timeout: 6000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!dismissed) {
+        const screenshot = await saveDebugScreenshot(page, "dialog-stuck");
+        return {
+          success: false,
+          provider: this.provider,
+          error: `Clicked Send but the invitation dialog didn't dismiss — the request was NOT sent. LinkedIn often does this when you've hit the weekly connection-request limit. Screenshot: ${screenshot}`,
+        };
+      }
+      await sleep(1200);
+      await saveDebugScreenshot(page, "after-send");
 
       return {
         success: true,
