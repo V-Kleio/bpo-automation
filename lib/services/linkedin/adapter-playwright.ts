@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import type { Browser, BrowserContext, Page } from "playwright";
 import { uid } from "@/lib/utils";
+import { getServerConfig } from "@/lib/services/config";
 import {
   ensureSessionDir,
   getSessionPath,
@@ -25,24 +26,35 @@ const PROFILE_LOAD_TIMEOUT_MS = 25_000;
 const ACTION_TIMEOUT_MS = 12_000;
 const SCREENSHOT_DIR = path.resolve(process.cwd(), ".data/linkedin/screenshots");
 
+// Both contexts (headed login + headless / headed send) must use the SAME
+// browser fingerprint, otherwise LinkedIn flags the saved session as
+// "different device" and throws the authwall. The shared options below
+// are passed to BOTH newContext() calls.
+const SHARED_CONTEXT_OPTIONS = {
+  viewport: { width: 1366, height: 768 },
+  locale: "en-US",
+  // Intentionally NOT overriding userAgent — let Playwright use its
+  // default Chromium UA so headed and headless contexts produce the
+  // identical "device fingerprint" LinkedIn binds cookies to.
+} as const;
+
 async function getPlaywright() {
   return import("playwright");
 }
 
-async function launchHeadless(): Promise<{
+async function launchForSend(): Promise<{
   browser: Browser;
   context: BrowserContext;
 }> {
   const pw = await getPlaywright();
+  const cfg = getServerConfig();
   const browser = await pw.chromium.launch({
-    headless: true,
+    headless: cfg.linkedin.playwright.headless,
     args: STEALTH_ARGS,
   });
   const context = await browser.newContext({
+    ...SHARED_CONTEXT_OPTIONS,
     storageState: getSessionPath(),
-    viewport: { width: 1366, height: 768 },
-    userAgent:
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   });
   return { browser, context };
 }
@@ -217,7 +229,7 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
           "No saved LinkedIn session. Click 'Connect LinkedIn' to log in first.",
       };
     }
-    const { browser, context } = await launchHeadless();
+    const { browser, context } = await launchForSend();
     try {
       const loaded = await openProfile(context, input.profileUrl);
       if (!loaded.ok) {
@@ -329,7 +341,7 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
           "No saved LinkedIn session. Click 'Connect LinkedIn' to log in first.",
       };
     }
-    const { browser, context } = await launchHeadless();
+    const { browser, context } = await launchForSend();
     try {
       const loaded = await openProfile(context, input.profileUrl);
       if (!loaded.ok) {
@@ -407,9 +419,7 @@ export async function runHeadedLogin(options: {
     headless: false,
     args: STEALTH_ARGS,
   });
-  const context = await browser.newContext({
-    viewport: { width: 1366, height: 768 },
-  });
+  const context = await browser.newContext(SHARED_CONTEXT_OPTIONS);
   const page = await context.newPage();
   await page.goto("https://www.linkedin.com/login", {
     waitUntil: "domcontentloaded",
@@ -462,7 +472,7 @@ export async function diagnoseProfile(profileUrl: string): Promise<{
       error: "No saved LinkedIn session.",
     };
   }
-  const { browser, context } = await launchHeadless();
+  const { browser, context } = await launchForSend();
   try {
     const loaded = await openProfile(context, profileUrl);
     if (!loaded.ok) {

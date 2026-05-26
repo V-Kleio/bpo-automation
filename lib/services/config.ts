@@ -56,6 +56,12 @@ export function getServerConfig() {
         hasSession:
           enablePlaywright &&
           fs.existsSync(path.resolve(process.cwd(), sessionPath)),
+        // Default headless. Set LINKEDIN_PLAYWRIGHT_HEADLESS=false (or 0)
+        // to run sends in a visible browser — much friendlier to LinkedIn's
+        // anti-automation heuristics at the cost of seeing a window pop up.
+        headless:
+          trim(process.env.LINKEDIN_PLAYWRIGHT_HEADLESS) !== "false" &&
+          trim(process.env.LINKEDIN_PLAYWRIGHT_HEADLESS) !== "0",
       },
       dailyCap,
       minDelayMs,
