@@ -85,15 +85,41 @@ function profileScope(page: Page): Locator {
   return page.locator("section, main").filter({ has: page.locator("h1") }).first();
 }
 
-// Inside an open artdeco dropdown, find an item by its label. LinkedIn's
-// dropdown items are usually <div role="button"> inside
-// .artdeco-dropdown__content — not role="menuitem".
-function dropdownItem(page: Page, label: RegExp): Locator {
-  return page
-    .locator('.artdeco-dropdown__content--is-open, [role="menu"]')
-    .locator('[role="button"], [role="menuitem"], button, a')
-    .filter({ hasText: label })
-    .first();
+// Click a dropdown item by its visible label. LinkedIn's dropdown items
+// are <div role="button"> inside .artdeco-dropdown__content, but the
+// exact state-modifier class and DOM shape change frequently — so we
+// scan every visible clickable element, match its trimmed text exactly,
+// and verify it's inside a dropdown-like container (not the "More
+// profiles for you" sidebar).
+async function clickDropdownItem(
+  page: Page,
+  label: string,
+  timeoutMs: number,
+): Promise<boolean> {
+  const wanted = label.toLowerCase();
+  const candidates = await page
+    .locator('[role="button"], [role="menuitem"], button, a, li[tabindex]')
+    .all();
+  for (const c of candidates) {
+    const visible = await c.isVisible().catch(() => false);
+    if (!visible) continue;
+    const text = ((await c.textContent().catch(() => "")) ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    if (text !== wanted) continue;
+    const insideDropdown = await c
+      .evaluate((el) =>
+        !!(el as Element).closest(
+          '[class*="dropdown__content"],[class*="artdeco-dropdown"],[role="menu"],[role="listbox"]',
+        ),
+      )
+      .catch(() => false);
+    if (!insideDropdown) continue;
+    await c.click({ timeout: timeoutMs });
+    return true;
+  }
+  return false;
 }
 
 function isProfileUrl(url: string): boolean {
@@ -279,19 +305,9 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
         clicked = true;
       } else if (buttons.moreActions) {
         await buttons.moreActions.click({ timeout: ACTION_TIMEOUT_MS });
-        await sleep(700 + Math.random() * 500);
+        await sleep(900 + Math.random() * 500);
         await saveDebugScreenshot(page, "after-more-click");
-
-        // LinkedIn's dropdown items are <div role="button"> inside
-        // .artdeco-dropdown__content — not role="menuitem". Search that
-        // scope specifically.
-        const connectInMenu = dropdownItem(page, /^Connect$/i);
-        if (
-          await connectInMenu.isVisible({ timeout: 3000 }).catch(() => false)
-        ) {
-          await connectInMenu.click({ timeout: ACTION_TIMEOUT_MS });
-          clicked = true;
-        }
+        clicked = await clickDropdownItem(page, "Connect", ACTION_TIMEOUT_MS);
       }
 
       if (!clicked) {
