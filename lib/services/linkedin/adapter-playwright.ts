@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "fs";
 import path from "path";
-import type { Browser, BrowserContext, Page } from "playwright";
+import type { Browser, BrowserContext, Locator, Page } from "playwright";
 import { uid } from "@/lib/utils";
 import { getServerConfig } from "@/lib/services/config";
 import {
@@ -69,9 +69,31 @@ async function saveDebugScreenshot(
     const fullPath = path.join(SCREENSHOT_DIR, fileName);
     await page.screenshot({ path: fullPath, fullPage: false });
     return fullPath;
-  } catch {
+  } catch (err) {
+    console.error(
+      `[playwright] screenshot save failed (${reason}):`,
+      err instanceof Error ? err.message : err,
+    );
     return undefined;
   }
+}
+
+// Profile-area scope so we don't grab Connect/Follow/Message buttons that
+// belong to the "More profiles for you" sidebar (other people's cards).
+// Falls back to the page if we can't find the heading.
+function profileScope(page: Page): Locator {
+  return page.locator("section, main").filter({ has: page.locator("h1") }).first();
+}
+
+// Inside an open artdeco dropdown, find an item by its label. LinkedIn's
+// dropdown items are usually <div role="button"> inside
+// .artdeco-dropdown__content — not role="menuitem".
+function dropdownItem(page: Page, label: RegExp): Locator {
+  return page
+    .locator('.artdeco-dropdown__content--is-open, [role="menu"]')
+    .locator('[role="button"], [role="menuitem"], button, a')
+    .filter({ hasText: label })
+    .first();
 }
 
 function isProfileUrl(url: string): boolean {
@@ -173,31 +195,30 @@ interface ActionAreaButtons {
 }
 
 async function findActionButtons(page: Page): Promise<ActionAreaButtons> {
-  // Scope to the top-card region where the primary action buttons live.
-  // The exact selector changes over time, so we fall back to whole-page roles.
+  // Scope to the profile's own action area so we don't pick up Connect /
+  // Message / Follow buttons that belong to OTHER people in the "More
+  // profiles for you" sidebar.
+  const scope = profileScope(page);
   const result: ActionAreaButtons = {};
 
-  // Direct Connect button — present on accounts you can connect with directly.
-  const connectDirect = page
+  const connectDirect = scope
     .getByRole("button", { name: /^Connect( to|$|\s)/i })
     .first();
   if (await connectDirect.isVisible({ timeout: 1500 }).catch(() => false)) {
     result.connectDirect = connectDirect;
   }
 
-  const pending = page.getByRole("button", { name: /^Pending/i }).first();
+  const pending = scope.getByRole("button", { name: /^Pending/i }).first();
   if (await pending.isVisible({ timeout: 500 }).catch(() => false)) {
     result.pending = pending;
   }
 
-  const message = page.getByRole("button", { name: /^Message$/i }).first();
+  const message = scope.getByRole("button", { name: /^Message$/i }).first();
   if (await message.isVisible({ timeout: 500 }).catch(() => false)) {
     result.message = message;
   }
 
-  // "More actions" button (three-dot menu). LinkedIn labels this as "More"
-  // and sometimes "More actions". Scope to buttons in the top-card area.
-  const moreActions = page
+  const moreActions = scope
     .getByRole("button", { name: /^More( actions)?$/i })
     .first();
   if (await moreActions.isVisible({ timeout: 500 }).catch(() => false)) {
@@ -258,14 +279,15 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
         clicked = true;
       } else if (buttons.moreActions) {
         await buttons.moreActions.click({ timeout: ACTION_TIMEOUT_MS });
-        await sleep(500 + Math.random() * 500);
-        const connectInMenu = page
-          .getByRole("menuitem", { name: /^Connect/i })
-          .first();
+        await sleep(700 + Math.random() * 500);
+        await saveDebugScreenshot(page, "after-more-click");
+
+        // LinkedIn's dropdown items are <div role="button"> inside
+        // .artdeco-dropdown__content — not role="menuitem". Search that
+        // scope specifically.
+        const connectInMenu = dropdownItem(page, /^Connect$/i);
         if (
-          await connectInMenu
-            .isVisible({ timeout: 3000 })
-            .catch(() => false)
+          await connectInMenu.isVisible({ timeout: 3000 }).catch(() => false)
         ) {
           await connectInMenu.click({ timeout: ACTION_TIMEOUT_MS });
           clicked = true;
@@ -280,7 +302,7 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
         return {
           success: false,
           provider: this.provider,
-          error: `Couldn't find a Connect button on this profile. LinkedIn may show "Follow" instead (means we need to use the More menu, which also wasn't found), or you may already be connected. Screenshot: ${screenshot ?? "(failed to capture)"}`,
+          error: `Couldn't find a Connect option for this profile. The More menu may not have opened, or this account doesn't allow connection requests from your tier. Screenshot: ${screenshot ?? "(failed to capture — check console for error)"}`,
         };
       }
 
@@ -452,15 +474,19 @@ export async function runHeadedLogin(options: {
   };
 }
 
-// Diagnostic helper: opens a profile with the saved session and reports
-// what we actually see (final URL after redirects, whether the profile
-// heading rendered, which action buttons are visible). Saves a screenshot.
+// Diagnostic helper: opens a profile with the saved session, reports
+// what we actually see (final URL after redirects, profile heading,
+// top-card action buttons), then clicks the More dropdown if present and
+// reports what's inside it. Saves screenshots throughout.
 export async function diagnoseProfile(profileUrl: string): Promise<{
   ok: boolean;
   finalUrl: string;
   heading: string | null;
+  profileButtons: string[];
+  moreMenuItems: string[];
   buttons: string[];
   screenshot?: string;
+  moreMenuScreenshot?: string;
   error?: string;
 }> {
   if (!hasSavedSession()) {
@@ -468,6 +494,8 @@ export async function diagnoseProfile(profileUrl: string): Promise<{
       ok: false,
       finalUrl: "",
       heading: null,
+      profileButtons: [],
+      moreMenuItems: [],
       buttons: [],
       error: "No saved LinkedIn session.",
     };
@@ -480,28 +508,76 @@ export async function diagnoseProfile(profileUrl: string): Promise<{
         ok: false,
         finalUrl: "",
         heading: null,
+        profileButtons: [],
+        moreMenuItems: [],
         buttons: [],
         screenshot: loaded.screenshot,
         error: loaded.reason,
       };
     }
     const { page } = loaded;
-    const heading = await page.locator("h1").first().textContent().catch(() => null);
-    const buttonTexts = await page
+    const heading = await page
+      .locator("h1")
+      .first()
+      .textContent()
+      .catch(() => null);
+
+    // Buttons in the profile's own action area (excludes sidebar Connects).
+    const scope = profileScope(page);
+    const profileButtonTexts = await scope
       .getByRole("button")
       .allTextContents()
       .catch(() => [] as string[]);
-    const visibleButtons = buttonTexts
+    const profileButtons = profileButtonTexts
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0 && t.length < 60);
+
+    // Whole-page buttons, for comparison.
+    const allButtonTexts = await page
+      .getByRole("button")
+      .allTextContents()
+      .catch(() => [] as string[]);
+    const buttons = allButtonTexts
       .map((t) => t.trim())
       .filter((t) => t.length > 0 && t.length < 50)
-      .slice(0, 20);
+      .slice(0, 25);
+
     const screenshot = await saveDebugScreenshot(page, "diagnose-ok");
+
+    // If a More button exists in the profile area, click it and report
+    // what the dropdown contains. This is the path most likely to fail.
+    let moreMenuItems: string[] = [];
+    let moreMenuScreenshot: string | undefined;
+    const moreButton = scope
+      .getByRole("button", { name: /^More( actions)?$/i })
+      .first();
+    if (await moreButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await moreButton.click({ timeout: ACTION_TIMEOUT_MS }).catch(() => {});
+      await sleep(800);
+      moreMenuScreenshot = await saveDebugScreenshot(page, "diagnose-more-open");
+      const menuItemTexts = await page
+        .locator(
+          '.artdeco-dropdown__content--is-open, [role="menu"][aria-hidden="false"], [role="menu"]:not([aria-hidden="true"])',
+        )
+        .locator('[role="button"], [role="menuitem"], button, a, li, span')
+        .allTextContents()
+        .catch(() => [] as string[]);
+      moreMenuItems = menuItemTexts
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0 && t.length < 60);
+      // Close the menu so the screenshot of the page doesn't get sticky.
+      await page.keyboard.press("Escape").catch(() => {});
+    }
+
     return {
       ok: true,
       finalUrl: page.url(),
       heading: heading ? heading.trim() : null,
-      buttons: visibleButtons,
+      profileButtons,
+      moreMenuItems,
+      buttons,
       screenshot,
+      moreMenuScreenshot,
     };
   } finally {
     await context.close().catch(() => {});
