@@ -153,11 +153,32 @@ export function LeadTable() {
       duration: 2000,
     });
     try {
-      await analyzeLeads(ids);
-      toast.success(`Analysis complete — ${ids.length} lead(s) qualified.`, {
-        id: "analyze",
-      });
-      setSelected(new Set());
+      const result = await analyzeLeads(ids);
+      const succeeded = result.succeeded.length;
+      const failed = result.failed.length;
+
+      if (succeeded > 0 && failed === 0) {
+        toast.success(`Analysis complete — ${succeeded} lead(s) qualified.`, {
+          id: "analyze",
+        });
+        setSelected(new Set());
+      } else if (succeeded > 0 && failed > 0) {
+        toast.warning(
+          `${succeeded} qualified, ${failed} failed. First error: ${result.failed[0].error}`,
+          { id: "analyze", duration: 10000 },
+        );
+      } else {
+        // Every lead failed — surface the first error so the user can act.
+        const first = result.failed[0];
+        toast.error(
+          first ? `Claude failed: ${first.error}` : "Claude analysis failed.",
+          { id: "analyze", duration: 12000 },
+        );
+      }
+    } catch (err) {
+      // analyzeLeads only throws on transport/auth issues (it already toasted).
+      console.error("[runAnalysis]", err);
+      toast.dismiss("analyze");
     } finally {
       setRunning(false);
     }

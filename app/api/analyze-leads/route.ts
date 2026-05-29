@@ -72,6 +72,12 @@ export async function POST(request: Request) {
               }) + "\n";
             controller.enqueue(encoder.encode(line));
           } catch (err) {
+            // Log the full error server-side so it shows up in `next dev`
+            // console output. The client only gets the message string.
+            console.error(
+              `[/api/analyze-leads] analyzeCompany failed for ${company.name} (${company.id}):`,
+              err,
+            );
             const message = err instanceof Error ? err.message : String(err);
             const line =
               JSON.stringify({

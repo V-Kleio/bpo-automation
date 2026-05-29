@@ -8,7 +8,7 @@ import {
   ANALYZE_TOOL_DESCRIPTION,
   ANALYZE_TOOL_SCHEMA,
 } from "./schema";
-import { ANALYZE_SYSTEM_PROMPT } from "./prompts/analyze-system";
+import { buildAnalyzeSystemPrompt } from "./prompts/analyze-system";
 import { buildAnalyzeUserPrompt } from "./prompts/analyze-user";
 import type {
   AIAnalysis,
@@ -45,39 +45,43 @@ export async function analyzeCompany(
   const model = cfg.anthropic.modelAnalyze;
   const started = Date.now();
 
+  // Tool composition depends on whether web_search is enabled. With it on we
+  // need tool_choice=auto so the model can search BEFORE submitting; with it
+  // off we can force submit_lead_analysis directly (cheaper, no risk of an
+  // unwanted bare text turn).
+  const submitTool = {
+    name: ANALYZE_TOOL_NAME,
+    description: ANALYZE_TOOL_DESCRIPTION,
+    input_schema:
+      ANALYZE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema,
+  };
+  const tools: Anthropic.Messages.ToolUnion[] = cfg.anthropic.webSearchEnabled
+    ? [
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: 5,
+        },
+        submitTool,
+      ]
+    : [submitTool];
+  const toolChoice: Anthropic.Messages.ToolChoice = cfg.anthropic
+    .webSearchEnabled
+    ? { type: "auto", disable_parallel_tool_use: true }
+    : { type: "tool", name: ANALYZE_TOOL_NAME };
+
   const response = await client.messages.create({
     model,
     max_tokens: 16000,
     system: [
       {
         type: "text",
-        text: ANALYZE_SYSTEM_PROMPT,
+        text: buildAnalyzeSystemPrompt(cfg.anthropic.webSearchEnabled),
         cache_control: { type: "ephemeral" },
       },
     ],
-    // Two tools:
-    //  - `web_search` is an Anthropic server-side tool. The platform auto-
-    //    executes searches and feeds results back to the model in the same
-    //    request. We do NOT see tool_use blocks for it on the client.
-    //  - `submit_lead_analysis` is our client tool — the model's final act.
-    //
-    // tool_choice must be `auto` (not forced) so the model can web_search
-    // BEFORE submitting. disable_parallel_tool_use keeps submit_lead_analysis
-    // as the single final call.
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 5,
-      },
-      {
-        name: ANALYZE_TOOL_NAME,
-        description: ANALYZE_TOOL_DESCRIPTION,
-        input_schema:
-          ANALYZE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema,
-      },
-    ],
-    tool_choice: { type: "auto", disable_parallel_tool_use: true },
+    tools,
+    tool_choice: toolChoice,
     messages: [
       {
         role: "user",

@@ -34,7 +34,14 @@ export class AIUnavailableError extends Error {
   }
 }
 
-export async function analyzeLeads(companyIds: string[]): Promise<void> {
+export interface AnalyzeResult {
+  succeeded: string[];
+  failed: Array<{ id: string; name: string; error: string }>;
+}
+
+export async function analyzeLeads(
+  companyIds: string[],
+): Promise<AnalyzeResult> {
   if (!(await isAnthropicConfigured())) {
     toast.error("Claude is not configured", {
       description:
@@ -84,7 +91,8 @@ export async function analyzeLeads(companyIds: string[]): Promise<void> {
     throw new Error(`Claude HTTP ${response.status}: ${detail}`);
   }
 
-  const failed: string[] = [];
+  const succeeded: string[] = [];
+  const failed: AnalyzeResult["failed"] = [];
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -99,7 +107,7 @@ export async function analyzeLeads(companyIds: string[]): Promise<void> {
       if (!line) continue;
       try {
         const parsed = JSON.parse(line) as AnalyzeLine;
-        handleLine(parsed, failed);
+        handleLine(parsed, succeeded, failed);
       } catch {
         // skip unparseable line
       }
@@ -107,32 +115,44 @@ export async function analyzeLeads(companyIds: string[]): Promise<void> {
   }
   if (buffer.trim()) {
     try {
-      handleLine(JSON.parse(buffer) as AnalyzeLine, failed);
+      handleLine(JSON.parse(buffer) as AnalyzeLine, succeeded, failed);
     } catch {
       // ignore trailing garbage
     }
   }
 
   if (failed.length > 0) {
-    toast.warning(
-      `${failed.length} lead(s) failed Claude analysis — leave them pending and retry.`,
-    );
-    revertAnalyzingStatus(failed);
+    revertAnalyzingStatus(failed.map((f) => f.id));
   }
+  return { succeeded, failed };
 }
 
-function handleLine(line: AnalyzeLine, failed: string[]): void {
-  if (line.error || !line.analysis) {
-    failed.push(line.companyId);
-    return;
-  }
+function handleLine(
+  line: AnalyzeLine,
+  succeeded: string[],
+  failed: AnalyzeResult["failed"],
+): void {
   const store = useStore.getState();
   const company = store.companies.find((c) => c.id === line.companyId);
+  const name = company?.name ?? line.companyId;
+  if (line.error || !line.analysis) {
+    const err = line.error || "Claude returned no analysis";
+    console.error(`[analyzeLeads] ${name} (${line.companyId}) failed:`, err);
+    failed.push({ id: line.companyId, name, error: err });
+    store.log({
+      layer: 2,
+      type: "ai_call",
+      summary: `Claude analysis FAILED for ${name}: ${err}`,
+      companyId: line.companyId,
+      meta: { mode: "real", error: err },
+    });
+    return;
+  }
   store.setAnalysis(line.companyId, line.analysis);
   store.log({
     layer: 2,
     type: "ai_call",
-    summary: `Claude returned priorityScore ${line.analysis.priorityScore} for ${company?.name ?? line.companyId}`,
+    summary: `Claude returned priorityScore ${line.analysis.priorityScore} for ${name}`,
     companyId: line.companyId,
     meta: {
       mode: "real",
@@ -141,6 +161,7 @@ function handleLine(line: AnalyzeLine, failed: string[]): void {
       webSearchCount: line.webSearchCount,
     },
   });
+  succeeded.push(line.companyId);
 }
 
 function revertAnalyzingStatus(ids: string[]): void {

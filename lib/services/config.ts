@@ -14,6 +14,20 @@ export function getServerConfig() {
   const anthropicKey = trim(process.env.ANTHROPIC_API_KEY);
   const anthropicAuthToken = trim(process.env.ANTHROPIC_AUTH_TOKEN);
   const anthropicBaseUrl = trim(process.env.ANTHROPIC_BASE_URL);
+  // Server-side web_search is a first-party-API feature. The Claude Max
+  // OAuth gateway currently rejects it with a confusing schema error
+  // ("tools.0.web_search_20250305.name: Input should be 'web_search'").
+  // Default-on for ANTHROPIC_API_KEY users, default-off for OAuth users,
+  // override-able via ANTHROPIC_ENABLE_WEB_SEARCH=1 or =0.
+  const webSearchOverride = trim(
+    process.env.ANTHROPIC_ENABLE_WEB_SEARCH,
+  ).toLowerCase();
+  const webSearchEnabled =
+    webSearchOverride === "1" || webSearchOverride === "true"
+      ? true
+      : webSearchOverride === "0" || webSearchOverride === "false"
+        ? false
+        : anthropicKey.length > 0;
   const hubspotToken = trim(process.env.HUBSPOT_PRIVATE_APP_TOKEN);
   const unipileKey = trim(process.env.UNIPILE_API_KEY);
   const unipileAccount = trim(process.env.UNIPILE_ACCOUNT_ID);
@@ -41,6 +55,7 @@ export function getServerConfig() {
       apiKey: anthropicKey,
       authToken: anthropicAuthToken,
       baseURL: anthropicBaseUrl,
+      webSearchEnabled,
       modelAnalyze:
         trim(process.env.CLAUDE_MODEL_ANALYZE) || "claude-opus-4-7",
       modelChat:

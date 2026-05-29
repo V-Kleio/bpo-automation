@@ -1,7 +1,8 @@
 import "server-only";
+import type Anthropic from "@anthropic-ai/sdk";
 import { getAnthropic } from "./client";
 import { getServerConfig } from "@/lib/services/config";
-import { CHAT_SYSTEM_PROMPT } from "./prompts/chat-system";
+import { buildChatSystemPrompt } from "./prompts/chat-system";
 import { buildChatUserPrompt } from "./prompts/chat-user";
 import type { Company, Stakeholder } from "@/lib/types";
 
@@ -22,26 +23,31 @@ export async function streamChat(input: ChatStreamInput): Promise<{
   const cfg = getServerConfig();
   const model = cfg.anthropic.modelChat;
 
+  // web_search is a first-party-API server tool; the Claude Max OAuth gateway
+  // rejects it. Skip the tool when the flag is off — chat falls back to
+  // reasoning over the in-context company facts.
+  const tools: Anthropic.Messages.ToolUnion[] | undefined = cfg.anthropic
+    .webSearchEnabled
+    ? [
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: 3,
+        },
+      ]
+    : undefined;
+
   const messageStream = client.messages.stream({
     model,
     max_tokens: 4096,
     system: [
       {
         type: "text",
-        text: CHAT_SYSTEM_PROMPT,
+        text: buildChatSystemPrompt(cfg.anthropic.webSearchEnabled),
         cache_control: { type: "ephemeral" },
       },
     ],
-    // Server-side web_search lets chat reason about current public info on
-    // a prospect without exposing any other tools. Cap at 3 to keep latency
-    // and cost predictable on chat-sized turns.
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 3,
-      },
-    ],
+    ...(tools ? { tools } : {}),
     messages: [
       {
         role: "user",
