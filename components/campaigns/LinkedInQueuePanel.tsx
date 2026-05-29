@@ -1,6 +1,14 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Play, ListPlus, Trash2, Clock, Send } from "lucide-react";
+import {
+  Loader2,
+  Play,
+  ListPlus,
+  Trash2,
+  Clock,
+  Send,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
@@ -356,6 +364,10 @@ export function LinkedInQueuePanel() {
           )}
         </div>
       )}
+
+      {snapshot && snapshot.items.some((i) => i.status === "failed") && (
+        <FailedItemsLog items={snapshot.items.filter((i) => i.status === "failed")} />
+      )}
     </div>
   );
 }
@@ -387,5 +399,40 @@ function Stat({
       {icon}
       {value} {label}
     </span>
+  );
+}
+
+function FailedItemsLog({ items }: { items: QueueItem[] }) {
+  // Show the most recent failures first, capped so the panel doesn't
+  // explode if many invites fail in a row.
+  const recent = items.slice(-5).reverse();
+  return (
+    <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 p-2">
+      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-rose-700">
+        <AlertTriangle className="h-3 w-3" />
+        Recent failures ({items.length})
+      </div>
+      <ul className="flex flex-col gap-1">
+        {recent.map((item) => (
+          <li
+            key={item.id}
+            className="rounded border border-rose-200 bg-white px-2 py-1 text-[11px]"
+          >
+            <div className="font-medium text-rose-800">
+              {item.firstName} · step {item.step} ·{" "}
+              {item.kind === "connect" ? "connection request" : "DM"}
+            </div>
+            <div className="mt-0.5 break-words text-rose-700">
+              {item.error ?? "unknown error"}
+            </div>
+            {item.finishedAt && (
+              <div className="mt-0.5 text-[10px] text-rose-500">
+                {formatRelative(item.finishedAt)}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
