@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Wiz.AI BPO Outreach Automation",
   description:
-    "AI-powered outreach automation prototype for the Indonesian BPO industry",
+    "AI-powered outreach automation for the Indonesian BPO industry",
 };
 
 export default function RootLayout({

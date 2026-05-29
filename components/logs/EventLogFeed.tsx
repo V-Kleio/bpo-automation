@@ -94,7 +94,7 @@ export function EventLogFeed({ limit }: { limit?: number }) {
       <div className="rounded-lg border border-zinc-200 bg-white">
         {shown.length === 0 ? (
           <div className="p-8 text-center text-sm text-zinc-500">
-            No events yet — run an analysis or start the simulation to fill this feed.
+            No events yet — run an analysis or send a LinkedIn message to fill this feed.
           </div>
         ) : (
           <ul className="divide-y divide-zinc-100">

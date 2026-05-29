@@ -29,7 +29,7 @@ export function NotifySalesPanel() {
       <CardContent className="space-y-2">
         {meetingDeals.length === 0 ? (
           <div className="rounded-md border border-dashed border-zinc-200 bg-white p-6 text-center text-xs text-zinc-500">
-            No meetings booked yet. Run the simulation to see this fill up.
+            No meetings booked yet. Mark a stakeholder as replied to advance the deal.
           </div>
         ) : (
           <ul className="space-y-2">

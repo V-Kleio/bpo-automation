@@ -14,9 +14,6 @@ export function TopBar() {
         <h1 className="text-sm font-medium text-zinc-700">
           Indonesia BPO Outreach Automation
         </h1>
-        <span className="text-[10px] font-semibold uppercase tracking-wider rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-amber-700">
-          Demo
-        </span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -32,11 +29,11 @@ export function TopBar() {
           variant="outline"
           size="sm"
           onClick={() => {
-            if (confirm("Reset all demo data to seed state?")) reset();
+            if (confirm("Clear all local data and start fresh?")) reset();
           }}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          Reset Demo
+          Reset
         </Button>
       </div>
     </header>

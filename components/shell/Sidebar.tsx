@@ -130,17 +130,6 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-zinc-200 px-4 py-3">
-        <div className="rounded-md bg-zinc-50 px-3 py-2.5">
-          <div className="flex items-center gap-2 text-xs font-medium text-zinc-700">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            Prototype Mode
-          </div>
-          <p className="mt-1 text-[11px] leading-snug text-zinc-500">
-            All data is mocked. No live APIs are called.
-          </p>
-        </div>
-      </div>
     </aside>
   );
 }
