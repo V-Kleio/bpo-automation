@@ -1,16 +1,11 @@
 "use client";
-// Public API mirroring lib/mock/ai-engine.ts. When the /api/config endpoint
-// reports anthropic.configured=true, calls go to the real route. Otherwise
-// they fall through to the existing mock so the demo keeps working without
-// any env vars.
+// Client-facing API for AI analysis + chat. Talks to /api/analyze-leads and
+// /api/ask-claude. No mock fallback — when Anthropic is not configured the
+// UI surfaces a hard error and refuses to run.
 
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { uid } from "@/lib/utils";
-import {
-  analyzeLeads as analyzeLeadsMock,
-  streamAskAI as streamAskAIMock,
-} from "@/lib/mock/ai-engine";
 import { getClientConfig } from "./public-config-client";
 import type { AIAnalysis, Company, Stakeholder } from "@/lib/types";
 
@@ -29,11 +24,23 @@ interface AnalyzeLine {
   error?: string;
   model?: string;
   durationMs?: number;
+  webSearchCount?: number;
+}
+
+export class AIUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AIUnavailableError";
+  }
 }
 
 export async function analyzeLeads(companyIds: string[]): Promise<void> {
   if (!(await isAnthropicConfigured())) {
-    return analyzeLeadsMock(companyIds);
+    toast.error("Claude is not configured", {
+      description:
+        "Set ANTHROPIC_AUTH_TOKEN (Claude Max) or ANTHROPIC_API_KEY in .env.local and restart.",
+    });
+    throw new AIUnavailableError("Anthropic not configured");
   }
 
   const state = useStore.getState();
@@ -62,18 +69,19 @@ export async function analyzeLeads(companyIds: string[]): Promise<void> {
       body: JSON.stringify({ companies, stakeholders }),
     });
   } catch (err) {
-    toast.error("Claude unavailable — using local fallback", {
-      description: err instanceof Error ? err.message : String(err),
-    });
-    return fallbackToMock(companyIds);
+    const message = err instanceof Error ? err.message : String(err);
+    toast.error("Claude request failed", { description: message });
+    revertAnalyzingStatus(companyIds);
+    throw err;
   }
 
   if (!response.ok || !response.body) {
     const detail = await safeReadText(response);
-    toast.error("Claude returned an error — using local fallback", {
+    toast.error("Claude returned an error", {
       description: detail || `HTTP ${response.status}`,
     });
-    return fallbackToMock(companyIds);
+    revertAnalyzingStatus(companyIds);
+    throw new Error(`Claude HTTP ${response.status}: ${detail}`);
   }
 
   const failed: string[] = [];
@@ -107,9 +115,9 @@ export async function analyzeLeads(companyIds: string[]): Promise<void> {
 
   if (failed.length > 0) {
     toast.warning(
-      `${failed.length} lead(s) failed Claude analysis — used local fallback`,
+      `${failed.length} lead(s) failed Claude analysis — leave them pending and retry.`,
     );
-    await analyzeLeadsMock(failed);
+    revertAnalyzingStatus(failed);
   }
 }
 
@@ -130,19 +138,18 @@ function handleLine(line: AnalyzeLine, failed: string[]): void {
       mode: "real",
       model: line.model,
       durationMs: line.durationMs,
+      webSearchCount: line.webSearchCount,
     },
   });
 }
 
-async function fallbackToMock(companyIds: string[]): Promise<void> {
-  // Re-run mock for any companies that were left in analyzing state.
+function revertAnalyzingStatus(ids: string[]): void {
   const state = useStore.getState();
-  const stillAnalyzing = companyIds.filter((id) => {
+  for (const id of ids) {
     const c = state.companies.find((x) => x.id === id);
-    return c?.status === "analyzing";
-  });
-  if (stillAnalyzing.length > 0) {
-    await analyzeLeadsMock(stillAnalyzing);
+    if (c?.status === "analyzing") {
+      state.setLeadStatus(id, "pending_analysis");
+    }
   }
 }
 
@@ -159,7 +166,7 @@ export async function* streamAskAI(
   contextCompanyIds: string[],
 ): AsyncGenerator<string, void, void> {
   if (!(await isAnthropicConfigured())) {
-    yield* streamAskAIMock(prompt, contextCompanyIds);
+    yield "Claude is not configured. Set ANTHROPIC_AUTH_TOKEN (Claude Max) or ANTHROPIC_API_KEY in .env.local and restart.";
     return;
   }
 
@@ -182,14 +189,15 @@ export async function* streamAskAI(
         contextStakeholders,
       }),
     });
-  } catch {
-    yield* streamAskAIMock(prompt, contextCompanyIds);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    yield `\n\n[Claude request failed: ${message}]`;
     return;
   }
 
   if (!response.ok || !response.body) {
-    toast.error("Claude chat error — using local fallback");
-    yield* streamAskAIMock(prompt, contextCompanyIds);
+    const detail = await safeReadText(response);
+    yield `\n\n[Claude error: ${detail || `HTTP ${response.status}`}]`;
     return;
   }
 

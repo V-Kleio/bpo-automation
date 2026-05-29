@@ -22,12 +22,14 @@ interface AnalyzeOneResult {
   durationMs: number;
   model: string;
   cacheReadInputTokens: number;
+  webSearchCount: number;
 }
 
 interface ToolInputShape {
   priorityScore: number;
   qualification: AIAnalysis["qualification"];
   partnership: AIAnalysis["partnership"];
+  webResearchSummary?: string;
   generatedMessages: Array<Omit<GeneratedMessage, "id">>;
 }
 
@@ -53,14 +55,29 @@ export async function analyzeCompany(
         cache_control: { type: "ephemeral" },
       },
     ],
+    // Two tools:
+    //  - `web_search` is an Anthropic server-side tool. The platform auto-
+    //    executes searches and feeds results back to the model in the same
+    //    request. We do NOT see tool_use blocks for it on the client.
+    //  - `submit_lead_analysis` is our client tool — the model's final act.
+    //
+    // tool_choice must be `auto` (not forced) so the model can web_search
+    // BEFORE submitting. disable_parallel_tool_use keeps submit_lead_analysis
+    // as the single final call.
     tools: [
+      {
+        type: "web_search_20250305",
+        name: "web_search",
+        max_uses: 5,
+      },
       {
         name: ANALYZE_TOOL_NAME,
         description: ANALYZE_TOOL_DESCRIPTION,
-        input_schema: ANALYZE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema,
+        input_schema:
+          ANALYZE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema,
       },
     ],
-    tool_choice: { type: "tool", name: ANALYZE_TOOL_NAME },
+    tool_choice: { type: "auto", disable_parallel_tool_use: true },
     messages: [
       {
         role: "user",
@@ -70,19 +87,25 @@ export async function analyzeCompany(
   });
 
   const toolUse = response.content.find(
-    (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+    (b): b is Anthropic.ToolUseBlock =>
+      b.type === "tool_use" && b.name === ANALYZE_TOOL_NAME,
   );
   if (!toolUse) {
     throw new Error(
-      `Expected tool_use block but got stop_reason=${response.stop_reason}`,
+      `Expected ${ANALYZE_TOOL_NAME} tool_use block but got stop_reason=${response.stop_reason}`,
     );
   }
+
+  const webSearchCount = response.content.filter(
+    (b) => b.type === "server_tool_use" && b.name === "web_search",
+  ).length;
 
   const input = toolUse.input as ToolInputShape;
   const analysis: AIAnalysis = {
     priorityScore: input.priorityScore,
     qualification: input.qualification,
     partnership: input.partnership,
+    webResearchSummary: input.webResearchSummary?.trim() || undefined,
     generatedMessages: input.generatedMessages.map((m) => ({
       ...m,
       id: uid("msg"),
@@ -95,5 +118,6 @@ export async function analyzeCompany(
     durationMs: Date.now() - started,
     model,
     cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+    webSearchCount,
   };
 }

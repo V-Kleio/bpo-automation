@@ -1,4 +1,5 @@
 import type { AIAnalysis, Company, Stakeholder } from "@/lib/types";
+import { WIZ_CRITERIA } from "../wiz-criteria";
 
 interface ChatContext {
   companies: Company[];
@@ -47,17 +48,18 @@ ${userPrompt}
 }
 
 function formatAnalysisSummary(a: AIAnalysis): string {
-  return [
-    `qualification:`,
-    `  industryFit ${a.qualification.industryFit.score} — ${a.qualification.industryFit.reasoning}`,
-    `  operationalPain ${a.qualification.operationalPain.score} — ${a.qualification.operationalPain.reasoning}`,
-    `  digitalMaturity ${a.qualification.digitalMaturity.score} — ${a.qualification.digitalMaturity.reasoning}`,
-    `  buyingSignals ${a.qualification.buyingSignals.score} — ${a.qualification.buyingSignals.reasoning}`,
-    `  budgetPotential ${a.qualification.budgetPotential.score} — ${a.qualification.budgetPotential.reasoning}`,
-    `partnership:`,
-    `  strategicAlignment: ${a.partnership.strategicAlignment}`,
-    `  aiReadiness: ${a.partnership.aiReadiness}`,
-    `  growthPotential: ${a.partnership.growthPotential}`,
-    `  localizationFit: ${a.partnership.localizationFit}`,
-  ].join("\n");
+  const lines: string[] = ["qualification (0-10 per criterion):"];
+  for (const c of WIZ_CRITERIA) {
+    const dim = a.qualification[c.key];
+    lines.push(`  ${c.label.padEnd(28)} ${dim.score}/10 — ${dim.reasoning}`);
+  }
+  lines.push("partnership:");
+  lines.push(`  strategicAlignment: ${a.partnership.strategicAlignment}`);
+  lines.push(`  aiReadiness: ${a.partnership.aiReadiness}`);
+  lines.push(`  growthPotential: ${a.partnership.growthPotential}`);
+  lines.push(`  localizationFit: ${a.partnership.localizationFit}`);
+  if (a.webResearchSummary) {
+    lines.push(`webResearchSummary: ${a.webResearchSummary}`);
+  }
+  return lines.join("\n");
 }

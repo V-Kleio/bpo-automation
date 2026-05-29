@@ -32,6 +32,16 @@ export async function streamChat(input: ChatStreamInput): Promise<{
         cache_control: { type: "ephemeral" },
       },
     ],
+    // Server-side web_search lets chat reason about current public info on
+    // a prospect without exposing any other tools. Cap at 3 to keep latency
+    // and cost predictable on chat-sized turns.
+    tools: [
+      {
+        type: "web_search_20250305",
+        name: "web_search",
+        max_uses: 3,
+      },
+    ],
     messages: [
       {
         role: "user",

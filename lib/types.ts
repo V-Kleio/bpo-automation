@@ -87,26 +87,41 @@ export interface Stakeholder {
   email?: string;
 }
 
+// Each Wiz criterion is scored 0-10 (integer) per the PDF rubric.
 export interface QualificationDimension {
-  score: number; // 0-100
+  score: number; // 0-10
   reasoning: string;
 }
 
+// Keys mirror lib/services/claude/wiz-criteria.ts → WIZ_CRITERION_KEYS.
+// Keep these in lockstep with that module.
+export interface WizQualification {
+  callVolume: QualificationDimension;
+  costPressure: QualificationDimension;
+  useCaseFit: QualificationDimension;
+  budgetCapacity: QualificationDimension;
+  digitalMaturity: QualificationDimension;
+  regulatoryFit: QualificationDimension;
+  languageNeed: QualificationDimension;
+  channelPartnerLeverage: QualificationDimension;
+  competitiveWhitespace: QualificationDimension;
+}
+
 export interface AIAnalysis {
-  priorityScore: number; // 0-100
-  qualification: {
-    industryFit: QualificationDimension;
-    operationalPain: QualificationDimension;
-    digitalMaturity: QualificationDimension;
-    buyingSignals: QualificationDimension;
-    budgetPotential: QualificationDimension;
-  };
+  // 0-100 — average of the 9 criterion scores × 10. Stored at 0-100 so the
+  // existing UI bits that render priorityScore as a 2-3 digit badge keep
+  // working without conditional formatting.
+  priorityScore: number;
+  qualification: WizQualification;
   partnership: {
     strategicAlignment: string;
     aiReadiness: string;
     growthPotential: string;
     localizationFit: string;
   };
+  // Optional one-line summary of what Claude found while web-searching the
+  // company, so the UI can show "What Claude learned" without re-fetching.
+  webResearchSummary?: string;
   generatedMessages: GeneratedMessage[];
   analyzedAt: string;
 }

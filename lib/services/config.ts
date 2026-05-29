@@ -12,6 +12,8 @@ function trim(v: string | undefined): string {
 
 export function getServerConfig() {
   const anthropicKey = trim(process.env.ANTHROPIC_API_KEY);
+  const anthropicAuthToken = trim(process.env.ANTHROPIC_AUTH_TOKEN);
+  const anthropicBaseUrl = trim(process.env.ANTHROPIC_BASE_URL);
   const hubspotToken = trim(process.env.HUBSPOT_PRIVATE_APP_TOKEN);
   const unipileKey = trim(process.env.UNIPILE_API_KEY);
   const unipileAccount = trim(process.env.UNIPILE_ACCOUNT_ID);
@@ -30,8 +32,15 @@ export function getServerConfig() {
 
   return {
     anthropic: {
-      hasKey: anthropicKey.length > 0,
+      // hasKey now means "has any usable auth": either a first-party API key
+      // OR an OAuth bearer (Claude Max via ANTHROPIC_AUTH_TOKEN + a custom
+      // ANTHROPIC_BASE_URL pointing at the gateway). Exactly one of apiKey
+      // or authToken should be set; if both are present the SDK accepts both
+      // but the gateway will reject mixed auth.
+      hasKey: anthropicKey.length > 0 || anthropicAuthToken.length > 0,
       apiKey: anthropicKey,
+      authToken: anthropicAuthToken,
+      baseURL: anthropicBaseUrl,
       modelAnalyze:
         trim(process.env.CLAUDE_MODEL_ANALYZE) || "claude-opus-4-7",
       modelChat:
