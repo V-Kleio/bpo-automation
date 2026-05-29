@@ -85,7 +85,11 @@ export async function analyzeCompany(
     messages: [
       {
         role: "user",
-        content: buildAnalyzeUserPrompt(company, stakeholders),
+        content: buildAnalyzeUserPrompt(
+          company,
+          stakeholders,
+          cfg.anthropic.webSearchEnabled,
+        ),
       },
     ],
   });
@@ -95,8 +99,14 @@ export async function analyzeCompany(
       b.type === "tool_use" && b.name === ANALYZE_TOOL_NAME,
   );
   if (!toolUse) {
+    const textBlocks = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text.slice(0, 200))
+      .join(" | ");
     throw new Error(
-      `Expected ${ANALYZE_TOOL_NAME} tool_use block but got stop_reason=${response.stop_reason}`,
+      `Expected ${ANALYZE_TOOL_NAME} tool_use block but got stop_reason=${response.stop_reason}. ` +
+        `Content blocks: ${response.content.map((b) => b.type).join(", ")}.` +
+        (textBlocks ? ` Text preview: ${textBlocks}` : ""),
     );
   }
 
@@ -104,13 +114,32 @@ export async function analyzeCompany(
     (b) => b.type === "server_tool_use" && b.name === "web_search",
   ).length;
 
-  const input = toolUse.input as ToolInputShape;
+  const input = toolUse.input as Partial<ToolInputShape>;
+  if (
+    typeof input.priorityScore !== "number" ||
+    !input.qualification ||
+    !input.partnership
+  ) {
+    throw new Error(
+      `submit_lead_analysis returned incomplete payload (stop_reason=${response.stop_reason}, ` +
+        `output_tokens=${response.usage.output_tokens}). ` +
+        `Missing required fields — model may have hit max_tokens. Got keys: ${Object.keys(input).join(", ") || "(empty)"}.`,
+    );
+  }
+  const rawMessages = input.generatedMessages;
+  if (!Array.isArray(rawMessages)) {
+    console.warn(
+      `[analyzeCompany] ${company.name}: generatedMessages missing from tool input ` +
+        `(stop_reason=${response.stop_reason}, output_tokens=${response.usage.output_tokens}). ` +
+        `Saving analysis without messages.`,
+    );
+  }
   const analysis: AIAnalysis = {
     priorityScore: input.priorityScore,
     qualification: input.qualification,
     partnership: input.partnership,
     webResearchSummary: input.webResearchSummary?.trim() || undefined,
-    generatedMessages: input.generatedMessages.map((m) => ({
+    generatedMessages: (rawMessages ?? []).map((m) => ({
       ...m,
       id: uid("msg"),
     })),
