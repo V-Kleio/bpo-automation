@@ -17,11 +17,6 @@ import type {
   DealActivity,
   LeadStatus,
 } from "@/lib/types";
-import { SEED_COMPANIES } from "@/lib/mock/seed-companies";
-import { buildAllStakeholders } from "@/lib/mock/seed-contacts";
-
-const SEED_STAKEHOLDERS = buildAllStakeholders(SEED_COMPANIES.map((c) => c.id));
-
 const MAX_LOGS = 500;
 
 interface State {
@@ -78,8 +73,8 @@ interface State {
 
 function freshState() {
   return {
-    companies: structuredClone(SEED_COMPANIES) as Company[],
-    stakeholders: structuredClone(SEED_STAKEHOLDERS) as Stakeholder[],
+    companies: [] as Company[],
+    stakeholders: [] as Stakeholder[],
     campaigns: [] as CampaignLead[],
     deals: [] as Deal[],
     logs: [] as LogEvent[],
@@ -280,7 +275,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "bpo-automation-store",
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         companies: state.companies,

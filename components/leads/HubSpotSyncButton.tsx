@@ -5,11 +5,14 @@ import { Cloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { getClientConfig } from "@/lib/services/public-config-client";
-import type { Company } from "@/lib/types";
+import type { Company, Stakeholder } from "@/lib/types";
 
-interface HubspotCompaniesResponse {
+interface HubspotContactsResponse {
   configured: boolean;
   companies: Company[];
+  stakeholders: Stakeholder[];
+  fetched: number;
+  skippedNoCompany: number;
   error?: string;
 }
 
@@ -17,6 +20,7 @@ export function HubSpotSyncButton() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const addCompanies = useStore((s) => s.addCompanies);
+  const addStakeholders = useStore((s) => s.addStakeholders);
   const log = useStore((s) => s.log);
 
   useEffect(() => {
@@ -28,10 +32,10 @@ export function HubSpotSyncButton() {
   async function sync() {
     setBusy(true);
     try {
-      const res = await fetch("/api/hubspot/companies?limit=100", {
+      const res = await fetch("/api/hubspot/contacts?limit=100", {
         cache: "no-store",
       });
-      const data = (await res.json()) as HubspotCompaniesResponse;
+      const data = (await res.json()) as HubspotContactsResponse;
       if (!data.configured) {
         toast.info("HubSpot not configured — nothing to sync.");
         setAvailable(false);
@@ -41,20 +45,28 @@ export function HubSpotSyncButton() {
         toast.error("HubSpot sync failed", { description: data.error });
         return;
       }
-      const added = addCompanies(data.companies);
+      const companiesAdded = addCompanies(data.companies);
+      const stakeholdersAdded = addStakeholders(data.stakeholders);
       log({
         layer: 1,
         type: "crm_sync",
-        summary: `Pulled ${data.companies.length} companies from HubSpot — ${added} new.`,
-        meta: { source: "hubspot", fetched: data.companies.length, added },
+        summary: `Pulled ${data.fetched} contacts from HubSpot — ${companiesAdded} new compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} new contact${stakeholdersAdded === 1 ? "" : "s"}.`,
+        meta: {
+          source: "hubspot",
+          fetched: data.fetched,
+          companiesAdded,
+          stakeholdersAdded,
+          skippedNoCompany: data.skippedNoCompany,
+        },
       });
+      const skippedNote =
+        data.skippedNoCompany > 0
+          ? `${data.skippedNoCompany} contact${data.skippedNoCompany === 1 ? "" : "s"} skipped (no company name).`
+          : undefined;
       toast.success(
-        `${added} new compan${added === 1 ? "y" : "ies"} synced from HubSpot`,
+        `${companiesAdded} compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} contact${stakeholdersAdded === 1 ? "" : "s"} synced from HubSpot`,
         {
-          description:
-            data.companies.length - added > 0
-              ? `${data.companies.length - added} already in the database.`
-              : undefined,
+          description: skippedNote,
         },
       );
     } catch (err) {

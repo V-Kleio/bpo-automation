@@ -5,10 +5,9 @@ Next.js 15 app with a 4-layer architecture (Lead Database → AI Intelligence �
 Campaign Manager → CRM Tracking) and an integration surface that lets each
 layer run either against real services or against a built-in mock.
 
-With zero env vars the app runs the original demo: 20 seeded BPO companies,
-deterministic mock scoring, regex-templated chat, probability-driven stage
-transitions. Add API keys to `.env.local` to swap any layer over to real
-services without touching the UI.
+With zero env vars the app boots with an empty lead database — you bring
+your own data via CSV/XLSX upload or HubSpot sync. Add API keys to
+`.env.local` to wire each layer to its real service without touching the UI.
 
 ## Running locally
 
@@ -26,7 +25,7 @@ configure them.
 
 ### Layer 1 — Lead acquisition
 
-Two real input paths land alongside the seeded data:
+The lead database starts empty. Two input paths populate it:
 
 - **CSV / XLSX upload** — always on. Click **Import** on `/leads`, drop in a
   file with at least `companyName` plus either `linkedinUrls` (separated by
@@ -35,9 +34,13 @@ Two real input paths land alongside the seeded data:
   `whyTarget`. A working sample lives at
   [`/sample/sample-linkedin-targets.csv`](public/sample/sample-linkedin-targets.csv)
   — link is also available in the import dialog.
-- **HubSpot pull** — set `HUBSPOT_PRIVATE_APP_TOKEN` (scope:
-  `crm.objects.companies.read`). The **Sync HubSpot** button appears in the
-  leads toolbar. Leave the env blank to keep the button hidden.
+- **HubSpot contact pull** — set `HUBSPOT_PRIVATE_APP_TOKEN` (scope:
+  `crm.objects.contacts.read`). The **Sync HubSpot** button appears in the
+  leads toolbar; it pulls from
+  `https://api.hubapi.com/crm/v3/objects/contacts` and groups contacts by
+  the `company` property into Company + Stakeholder records. Contacts with
+  no `company` value are skipped. Leave the env blank to keep the button
+  hidden.
 
 ### Layer 2 — Real Claude AI
 
@@ -88,7 +91,7 @@ Daily usage is persisted to `.data/linkedin/usage.json` and reset at midnight
 UTC. Hitting the cap returns a 429 from `/api/linkedin/send` and the
 gateway falls back to a simulated touchpoint for the remainder of the day.
 
-#### Testing LinkedIn end-to-end without seed data
+#### Testing LinkedIn end-to-end
 
 The sample CSV ships with two real-looking LinkedIn URLs paired with fake
 company names so you can drive the whole pipeline:
@@ -108,13 +111,12 @@ company names so you can drive the whole pipeline:
 ## Architecture notes
 
 - All real integrations live behind `LinkedInAdapter` / `ai-router` /
-  `hubspot/fetch-companies` interfaces. Each has a mock implementation that
-  remains the active path until env vars are set.
+  `hubspot/fetch-contacts` interfaces. Layer 1 has no mock fallback — the
+  store starts empty and is populated only by uploads or HubSpot sync.
 - Secrets never reach the browser. The `/api/config` route returns sanitized
   booleans + the active LinkedIn provider name; components branch on those.
-- The Zustand store and seed data are untouched — real and mock paths
-  emit the same `Company` / `Stakeholder` / `Touchpoint` shapes so the rest
-  of the UI doesn't care which path was used.
+- Real and import paths emit the same `Company` / `Stakeholder` /
+  `Touchpoint` shapes so the rest of the UI doesn't care which path was used.
 - LinkedIn replies and stage advancement remain simulated — the daily cap
   is intentionally small so we don't try to scrape an inbox.
 
