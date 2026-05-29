@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mail, Send, MessageSquareReply, Loader2 } from "lucide-react";
+import { Send, MessageSquareReply, Loader2 } from "lucide-react";
 import { LinkedinIcon } from "@/components/ui/icons";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
@@ -44,15 +44,11 @@ export function StepActions({
   const updateCampaignStage = useStore((s) => s.updateCampaignStage);
   const setActiveStep = useStore((s) => s.setActiveStep);
   const log = useStore((s) => s.log);
-  const [busy, setBusy] = useState<null | "connect" | "dm" | "email" | "reply">(
-    null,
-  );
+  const [busy, setBusy] = useState<null | "connect" | "dm" | "reply">(null);
 
   const linkedinMessage = findMessage(company, stakeholder.id, "linkedin");
-  const emailMessage = findMessage(company, stakeholder.id, "email");
   const hasAnalysis = !!company.analysis;
   const hasLinkedinUrl = !!stakeholder.linkedinUrl;
-  const hasEmail = !!stakeholder.email;
 
   const touchpointsForStep = campaign.touchpoints.filter(
     (t) => t.stakeholderId === stakeholder.id,
@@ -61,7 +57,6 @@ export function StepActions({
     (t) => t.type === "connection_request",
   );
   const dmSent = touchpointsForStep.some((t) => t.type === "dm");
-  const emailSent = touchpointsForStep.some((t) => t.type === "email");
   const repliedAlready = touchpointsForStep.some(
     (t) => t.type === "reply_received",
   );
@@ -164,50 +159,6 @@ export function StepActions({
     }
   }
 
-  function sendEmail() {
-    if (!hasEmail) return;
-    if (!emailMessage && !hasAnalysis) {
-      toast.warning("Run AI analysis first to generate email content.");
-      return;
-    }
-    setBusy("email");
-    const nowIso = new Date().toISOString();
-    const first = stakeholder.name.split(" ")[0] ?? stakeholder.name;
-    const subject =
-      emailMessage?.subject ?? `Quick note re ${company.name}`;
-    const preview = `Email to ${first}: "${subject}" (simulated)`;
-    const tp: Touchpoint = {
-      id: uid("tp"),
-      stakeholderId: stakeholder.id,
-      channel: "email",
-      type: "email",
-      sentAt: nowIso,
-      status: "delivered",
-      step,
-      messagePreview: preview,
-    };
-    appendTouchpoint(company.id, tp);
-    log({
-      layer: 3,
-      type: "channel_send",
-      summary: preview,
-      companyId: company.id,
-      at: nowIso,
-      meta: { provider: "mock", channel: "email" },
-    });
-    recordDealActivity(company.id, {
-      id: uid("act"),
-      at: nowIso,
-      type: "touchpoint",
-      summary: preview,
-    });
-    if (campaign.stage === "queued" || campaign.stage === "connection_sent") {
-      updateCampaignStage(company.id, "email_sequence_active", nowIso);
-    }
-    toast.info(`Simulated email logged for ${first}`);
-    setBusy(null);
-  }
-
   function markReplied() {
     setBusy("reply");
     const nowIso = new Date().toISOString();
@@ -266,6 +217,7 @@ export function StepActions({
           disabled={
             busy !== null ||
             !hasLinkedinUrl ||
+            !linkedinIsLive ||
             connectionSent ||
             repliedAlready
           }
@@ -273,11 +225,11 @@ export function StepActions({
           title={
             !hasLinkedinUrl
               ? "No LinkedIn URL for this stakeholder"
-              : connectionSent
-                ? "Connection request already sent"
-                : linkedinIsLive
-                  ? "Sends a real LinkedIn connection request via the active provider"
-                  : "Simulated (no real LinkedIn provider connected)"
+              : !linkedinIsLive
+                ? "Connect LinkedIn to send"
+                : connectionSent
+                  ? "Connection request already sent"
+                  : "Sends a real LinkedIn connection request via the active provider"
           }
         >
           {busy === "connect" ? (
@@ -286,22 +238,24 @@ export function StepActions({
             <LinkedinIcon className="h-3.5 w-3.5" />
           )}
           {connectionSent ? "Connection sent" : "Send connection"}
-          {!linkedinIsLive && !connectionSent && (
-            <span className="text-[10px] opacity-70">(sim)</span>
-          )}
         </Button>
 
         <Button
           variant="primary"
           size="sm"
-          disabled={busy !== null || !hasLinkedinUrl || repliedAlready}
+          disabled={
+            busy !== null ||
+            !hasLinkedinUrl ||
+            !linkedinIsLive ||
+            repliedAlready
+          }
           onClick={() => sendLinkedIn("dm")}
           title={
             !hasLinkedinUrl
               ? "No LinkedIn URL for this stakeholder"
-              : linkedinIsLive
-                ? "Sends a real LinkedIn DM via the active provider"
-                : "Simulated (no real LinkedIn provider connected)"
+              : !linkedinIsLive
+                ? "Connect LinkedIn to send"
+                : "Sends a real LinkedIn DM via the active provider"
           }
         >
           {busy === "dm" ? (
@@ -310,29 +264,6 @@ export function StepActions({
             <Send className="h-3.5 w-3.5" />
           )}
           {dmSent ? "Send another DM" : "Send LinkedIn DM"}
-          {!linkedinIsLive && (
-            <span className="text-[10px] opacity-70">(sim)</span>
-          )}
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy !== null || !hasEmail || repliedAlready}
-          onClick={sendEmail}
-          title={
-            !hasEmail
-              ? "No email for this stakeholder"
-              : "Email is always simulated — appends a logged touchpoint."
-          }
-        >
-          {busy === "email" ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Mail className="h-3.5 w-3.5" />
-          )}
-          {emailSent ? "Send another email" : "Send email"}
-          <span className="text-[10px] opacity-70">(sim)</span>
         </Button>
 
         {!repliedAlready && (

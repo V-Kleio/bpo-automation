@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Wifi, Cloud, BellOff, Activity, Mail } from "lucide-react";
+import { Wifi, Cloud, AlertCircle, Activity, Mail } from "lucide-react";
 import { getClientConfig } from "@/lib/services/public-config-client";
 import type { LinkedInProvider } from "@/lib/services/config";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ const PROVIDER_LABEL: Record<LinkedInProvider, string> = {
   unipile: "Unipile",
   mcp: "MCP",
   playwright: "Playwright",
-  mock: "Simulated",
+  mock: "Not configured",
 };
 
 export function ProviderBadge() {
@@ -29,13 +29,13 @@ export function ProviderBadge() {
 
   const tone =
     provider === "mock"
-      ? "border-zinc-200 bg-zinc-50 text-zinc-600"
+      ? "border-rose-200 bg-rose-50 text-rose-700"
       : authenticated
         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
         : "border-amber-200 bg-amber-50 text-amber-700";
 
   const Icon =
-    provider === "mock" ? BellOff : provider === "unipile" ? Cloud : Wifi;
+    provider === "mock" ? AlertCircle : provider === "unipile" ? Cloud : Wifi;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -49,14 +49,14 @@ export function ProviderBadge() {
         LinkedIn · {PROVIDER_LABEL[provider]}
         {provider !== "mock" && (authenticated ? " · Live" : " · Auth required")}
       </span>
-      <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 font-medium text-zinc-600">
+      <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 font-medium text-zinc-500">
         <Mail className="h-3 w-3" />
-        Email · Simulated
+        Email · Coming soon
       </span>
       {provider !== "mock" && authenticated && (
         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
           <Activity className="h-3 w-3 animate-pulse" />
-          Real outreach
+          Live outreach
         </span>
       )}
     </div>

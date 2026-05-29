@@ -34,24 +34,33 @@ export async function POST(request: Request) {
 
   const { adapter, provider } = selectAdapter();
 
-  // Rate-limit only real providers; the mock adapter is always free.
-  if (provider !== "mock") {
-    try {
-      acquireSlot();
-    } catch (err) {
-      if (err instanceof RateLimitExceededError) {
-        return NextResponse.json(
-          {
-            success: false,
-            provider,
-            error: err.message,
-            rateLimited: true,
-          },
-          { status: 429 },
-        );
-      }
-      throw err;
+  if (provider === "mock") {
+    return NextResponse.json(
+      {
+        success: false,
+        provider,
+        error:
+          "LinkedIn is not configured. Set ENABLE_PLAYWRIGHT_LINKEDIN=1 (or UNIPILE_API_KEY) and connect a session.",
+      },
+      { status: 412 },
+    );
+  }
+
+  try {
+    acquireSlot();
+  } catch (err) {
+    if (err instanceof RateLimitExceededError) {
+      return NextResponse.json(
+        {
+          success: false,
+          provider,
+          error: err.message,
+          rateLimited: true,
+        },
+        { status: 429 },
+      );
     }
+    throw err;
   }
 
   try {

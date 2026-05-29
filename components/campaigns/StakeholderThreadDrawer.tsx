@@ -138,7 +138,9 @@ export function StakeholderThreadDrawer({
                           />
                         </div>
 
-                        {/* Touchpoints split by channel */}
+                        {/* Touchpoints split by channel — email is not yet
+                            active, but we still render any pre-existing
+                            email touchpoints so they're not silently lost. */}
                         <ChannelSection
                           channel="linkedin"
                           tps={tps.filter((t) => t.channel === "linkedin")}
@@ -256,8 +258,20 @@ function ChannelSection({
   live: boolean;
   providerLabel: LinkedInProvider;
 }) {
+  // For email: only render if there are pre-existing touchpoints to surface.
+  // No new email touchpoints can be created — the channel is not active yet.
   if (tps.length === 0) return null;
   const Icon = channel === "linkedin" ? LinkedinIcon : Mail;
+  const badgeLabel =
+    channel === "email"
+      ? "Coming soon"
+      : live
+        ? `Live · ${providerLabel}`
+        : "Not connected";
+  const badgeTone =
+    channel === "linkedin" && live
+      ? "bg-emerald-50 text-emerald-700"
+      : "bg-zinc-100 text-zinc-500";
   return (
     <div className="mt-2.5">
       <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -271,12 +285,10 @@ function ChannelSection({
         <span
           className={cn(
             "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
-            live
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-zinc-100 text-zinc-500",
+            badgeTone,
           )}
         >
-          {live ? `Live · ${providerLabel}` : "Simulated"}
+          {badgeLabel}
         </span>
       </div>
       <ul className="space-y-1.5">
