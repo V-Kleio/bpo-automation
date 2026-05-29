@@ -13,6 +13,7 @@ your own data via CSV/XLSX upload or HubSpot sync. Add API keys to
 
 ```bash
 npm install
+npx playwright install chromium
 npm run dev
 # open http://localhost:3000
 ```
