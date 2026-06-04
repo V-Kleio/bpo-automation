@@ -16,6 +16,7 @@ import { uid, formatRelative } from "@/lib/utils";
 import { recordDealActivity } from "@/lib/mock/crm-sync";
 import { STEP_TO_ROLE, type Touchpoint } from "@/lib/types";
 import { getClientConfig } from "@/lib/services/public-config-client";
+import { truncateNote } from "@/lib/services/linkedin/types";
 import { cn } from "@/lib/utils";
 
 interface QueueItem {
@@ -95,9 +96,10 @@ export function LinkedInQueuePanel() {
       const msg = company.analysis?.generatedMessages.find(
         (m) => m.stakeholderId === sh.id && m.channel === "linkedin",
       );
-      const note =
-        msg?.body?.slice(0, 280) ??
-        `Hi ${first} — open to a quick chat about reducing manual agent workload at ${company.name}?`;
+      const note = truncateNote(
+        msg?.body ??
+          `Hi ${first} — open to a quick chat about reducing manual agent workload at ${company.name}?`,
+      );
       out.push({
         companyId: company.id,
         companyName: company.name,

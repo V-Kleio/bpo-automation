@@ -1,4 +1,5 @@
 import type { Company, Stakeholder } from "@/lib/types";
+import { LINKEDIN_FREE_NOTE_MAX_LENGTH } from "@/lib/services/linkedin/types";
 
 export function buildAnalyzeUserPrompt(
   company: Company,
@@ -41,14 +42,14 @@ export function buildAnalyzeUserPrompt(
 2. Score the company against all nine WIZ.AI criteria (0-10 each).
 3. Compute the overall priorityScore (0-100).
 4. Write the partnership block grounded in what you found.
-5. Draft the full 4-step outreach sequence (one LinkedIn DM + one Email per stakeholder per their step).
+5. Draft the full 4-step outreach sequence (one LinkedIn DM + one Email per stakeholder per their step). LinkedIn DMs must be ≤${LINKEDIN_FREE_NOTE_MAX_LENGTH} characters (aim for ~${LINKEDIN_FREE_NOTE_MAX_LENGTH - 20} for headroom); emails 3-5 paragraphs.
 6. Call submit_lead_analysis exactly once with the complete payload, including a webResearchSummary capturing what your searches actually revealed.`
     : `TASK
 1. Reason from the COMPANY FACTS and your background knowledge of Indonesian industries. No web search is available on this call — do NOT invent specifics you cannot infer from the inputs.
 2. Score the company against all nine WIZ.AI criteria (0-10 each). When a fact is missing, score conservatively and say "unknown — based on industry baseline" in the reasoning.
 3. Compute the overall priorityScore (0-100).
 4. Write the partnership block grounded in the input facts.
-5. Draft the full 4-step outreach sequence (one LinkedIn DM + one Email per stakeholder per their step). Keep this block tight — LinkedIn DMs ≤300 chars, emails 3-5 paragraphs.
+5. Draft the full 4-step outreach sequence (one LinkedIn DM + one Email per stakeholder per their step). Keep this block tight — LinkedIn DMs ≤${LINKEDIN_FREE_NOTE_MAX_LENGTH} chars (aim for ~${LINKEDIN_FREE_NOTE_MAX_LENGTH - 20} for headroom), emails 3-5 paragraphs.
 6. Call submit_lead_analysis exactly once with the complete payload. Leave webResearchSummary blank.`;
 
   return `COMPANY FACTS (from CRM / CSV — may be sparse, treat as a starting point)

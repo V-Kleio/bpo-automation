@@ -1,4 +1,5 @@
 import { WIZ_PRODUCT_CONTEXT } from "../wiz-criteria";
+import { LINKEDIN_FREE_NOTE_MAX_LENGTH } from "@/lib/services/linkedin/types";
 
 // The system prompt has two variants: one when the Anthropic server-side
 // web_search tool is available (first-party API), one when it isn't (Claude
@@ -58,7 +59,10 @@ ROLE → STEP MAPPING
   ceo → 4                    (lead with multi-year partnership scope)
 Each message must reference the company name and at least one specific
 stakeholder fact (title, prior employer, named expertise). No emoji.
-LinkedIn DMs ≤300 chars. Emails: 3–5 paragraphs.
+LinkedIn DMs must be ≤${LINKEDIN_FREE_NOTE_MAX_LENGTH} characters (LinkedIn's
+hard limit for a free-account connection note — anything longer gets
+truncated on the recipient's side, so aim for ~${LINKEDIN_FREE_NOTE_MAX_LENGTH - 20}
+to leave headroom). Emails: 3–5 paragraphs.
 
 SCORING GUIDANCE per criterion
 - Call/Contact Volume: 9–10 = banks, telcos, e-com marketplaces with millions of contacts/month. 5–6 = mid-market with sporadic volume. 0–2 = niche B2B with no consumer surface.

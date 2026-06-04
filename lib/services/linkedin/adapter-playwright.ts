@@ -10,11 +10,12 @@ import {
   hasSavedSession,
 } from "./session-store";
 import { keystrokeDelay, sleep } from "./jitter";
-import type {
-  LinkedInAdapter,
-  SendConnectionInput,
-  SendMessageInput,
-  SendResult,
+import {
+  truncateNote,
+  type LinkedInAdapter,
+  type SendConnectionInput,
+  type SendMessageInput,
+  type SendResult,
 } from "./types";
 
 const STEALTH_ARGS = [
@@ -25,6 +26,12 @@ const STEALTH_ARGS = [
 const PROFILE_LOAD_TIMEOUT_MS = 25_000;
 const ACTION_TIMEOUT_MS = 12_000;
 const SCREENSHOT_DIR = path.resolve(process.cwd(), ".data/linkedin/screenshots");
+
+// Once a free account hits its custom-note quota, every subsequent send in
+// this process will too. Remember it so we skip the failure-prone
+// "Add a note" → Premium-upsell → reopen-Connect dance and go straight to
+// "Send without a note" on the first invitation dialog. Resets on restart.
+let freeNoteQuotaExhausted = false;
 
 // Both contexts (headed login + headless / headed send) must use the SAME
 // browser fingerprint, otherwise LinkedIn flags the saved session as
@@ -447,7 +454,7 @@ async function fillInvitationNote(
   dialog: Locator,
   noteText: string,
 ): Promise<{ ok: boolean; reason: string; hitFreeNoteLimit?: boolean }> {
-  const trimmed = noteText.slice(0, 200);
+  const trimmed = truncateNote(noteText);
 
   let textbox = dialog.locator('textarea, [role="textbox"]').first();
   let boxVisible = await textbox
@@ -615,6 +622,120 @@ function summarizeButtons(
     .join(" | ");
 }
 
+// Cleanly restart the Connect flow and return a freshly opened invitation
+// dialog so the caller can send WITHOUT a note. Used by the no-note
+// fallback after a note attempt hit LinkedIn's Premium upsell.
+//
+// We RELOAD the profile first. Clicking "Add a note" → dismissing the
+// upsell → immediately re-clicking Connect pollutes LinkedIn's invitation
+// state and makes the next send fail with "invitation not sent, please try
+// again". A reload gives a clean slate and clears that conflict.
+//
+// Returns:
+//   - { status: "pending" } if the earlier attempt actually registered
+//     (top card already shows Pending) — caller should treat as success.
+//   - { status: "dialog", dialog } with the fresh invitation dialog.
+//   - { status: "error", error } if Connect/dialog couldn't be reopened.
+async function reopenConnectDialog(
+  page: Page,
+  firstName?: string,
+): Promise<
+  | { status: "dialog"; dialog: Locator }
+  | { status: "pending" }
+  | { status: "error"; error: string }
+> {
+  // Close any lingering modal, then reload for a clean slate.
+  await page.keyboard.press("Escape").catch(() => {});
+  await sleep(300);
+  try {
+    await page.reload({
+      waitUntil: "domcontentloaded",
+      timeout: PROFILE_LOAD_TIMEOUT_MS,
+    });
+  } catch {
+    /* fall through — we'll still try to find Connect below */
+  }
+  await sleep(2500);
+
+  // The earlier (note) attempt may actually have registered the invite.
+  if (await isPendingShown(page)) {
+    console.log(
+      "[playwright] no-note fallback: profile already shows Pending after reload — invite landed",
+    );
+    return { status: "pending" };
+  }
+
+  const retry = await findAndMarkConnectButton(page, firstName);
+  console.log(
+    `[playwright] no-note fallback Connect re-search: found=${retry.found} via=${retry.via ?? "n/a"}`,
+  );
+  if (!retry.found) {
+    const screenshot = await saveDebugScreenshot(page, "fallback-no-connect");
+    return {
+      status: "error",
+      error: `Note couldn't be attached and the Connect button couldn't be re-found to retry without a note. Screenshot: ${screenshot}`,
+    };
+  }
+  try {
+    await page
+      .locator(`[${CONNECT_MARKER_ATTR}="1"]`)
+      .first()
+      .click({ timeout: ACTION_TIMEOUT_MS });
+  } catch (err) {
+    const screenshot = await saveDebugScreenshot(
+      page,
+      "fallback-connect-click-failed",
+    );
+    return {
+      status: "error",
+      error: `No-note fallback: retry-Connect click failed: ${err instanceof Error ? err.message : String(err)}. Screenshot: ${screenshot}`,
+    };
+  }
+  await sleep(1200);
+  const retryDialog = page.locator('[role="dialog"]').first();
+  const open = await retryDialog
+    .isVisible({ timeout: 5000 })
+    .catch(() => false);
+  if (!open) {
+    const screenshot = await saveDebugScreenshot(page, "fallback-no-dialog");
+    return {
+      status: "error",
+      error: `No-note fallback: retry-Connect didn't reopen the invitation dialog. Screenshot: ${screenshot}`,
+    };
+  }
+  await saveDebugScreenshot(page, "fallback-invite-dialog");
+  return { status: "dialog", dialog: retryDialog };
+}
+
+// True when the profile's top card shows a "Pending" button — the
+// ground-truth signal that an invitation was actually queued by LinkedIn.
+async function isPendingShown(page: Page): Promise<boolean> {
+  const scope = profileScope(page);
+  const pending = scope.getByRole("button", { name: /^Pending/i }).first();
+  return pending.isVisible({ timeout: 1000 }).catch(() => false);
+}
+
+// LinkedIn dismisses the invitation dialog and THEN surfaces an error toast
+// ("Sorry, invitation not sent to … Please try again.") when a send is
+// rejected (per-profile/weekly limits, soft blocks). Returns the toast text
+// if such a failure toast is present.
+async function detectSendErrorToast(page: Page): Promise<string | null> {
+  const toast = page
+    .locator('[role="alert"], .artdeco-toast-item, [class*="artdeco-toast"]')
+    .filter({
+      hasText:
+        /not sent|couldn'?t send|unable to send|please try again|something went wrong/i,
+    })
+    .first();
+  if (!(await toast.isVisible({ timeout: 1500 }).catch(() => false))) {
+    return null;
+  }
+  const txt = ((await toast.textContent().catch(() => "")) ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return txt || "LinkedIn reported the invitation was not sent.";
+}
+
 async function findActionButtons(page: Page): Promise<ActionAreaButtons> {
   // Scope to the profile's own action area so we don't pick up Connect /
   // Message / Follow buttons that belong to OTHER people in the "More
@@ -774,79 +895,82 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
       const hasNote = noteText.length > 0;
 
       let noteAttached = false;
-      let hitFreeNoteLimit = false;
-      if (hasNote) {
+      let noteFailReason = "";
+      // Did we click "Add a note"? If so the dialog/invitation state is
+      // polluted and must be reopened fresh; if not (skip path), the
+      // first dialog is still clean and we can send without a note there.
+      let dialogClobbered = false;
+      if (hasNote && freeNoteQuotaExhausted) {
+        // We already learned this account is out of free notes — don't
+        // bother clicking "Add a note" (it just triggers the Premium
+        // upsell and forces a fragile reopen). Fall straight through to
+        // "Send without a note" on the dialog that's already open.
+        noteFailReason = "free custom-note quota known-exhausted this session";
+        console.log(
+          "[playwright] skipping note attach (quota known-exhausted); sending without a note",
+        );
+      } else if (hasNote) {
         const filled = await fillInvitationNote(page, dialog, noteText);
         noteAttached = filled.ok;
-        hitFreeNoteLimit = filled.hitFreeNoteLimit === true;
+        noteFailReason = filled.reason;
+        dialogClobbered = !filled.ok; // we interacted with Add-a-note / upsell
+        if (filled.hitFreeNoteLimit) {
+          freeNoteQuotaExhausted = true;
+        }
         if (!filled.ok) {
           console.warn(
             `[playwright] note fill failed (${filled.reason}); ${
-              hitFreeNoteLimit
-                ? "free note quota exhausted — will retry without note"
-                : "falling through to Send without a note"
-            }`,
+              filled.hitFreeNoteLimit
+                ? "free note quota exhausted — "
+                : ""
+            }falling back to connect without a note`,
           );
         }
       }
 
-      // Premium upsell case: LinkedIn dismissed the textbox dialog after
-      // we clicked "Add a note". The original invitation dialog is gone,
-      // so reopen the Connect flow and send without a note.
+      // No-note fallback. If we meant to attach a note but couldn't —
+      // most commonly because this is a free account whose custom-note
+      // quota is exhausted (LinkedIn shows a Premium upsell) — we still
+      // connect, just without a note. Two sub-cases:
+      //   A) we never clicked "Add a note" (quota known-exhausted skip
+      //      path) → the first dialog is clean → send "without a note" here.
+      //   B) we clicked "Add a note" and hit the upsell → the dialog is
+      //      polluted → reopen Connect fresh (with a reload) and send
+      //      without a note via reopenConnectDialog().
       let activeDialog = dialog;
       let activeHasNote = noteAttached;
-      if (hitFreeNoteLimit) {
-        await sleep(800);
-        const retry = await findAndMarkConnectButton(page, input.firstName);
-        console.log(
-          `[playwright] post-upsell Connect re-search: found=${retry.found} via=${retry.via ?? "n/a"}`,
-        );
-        if (!retry.found) {
-          const screenshot = await saveDebugScreenshot(
-            page,
-            "post-upsell-no-connect",
+      if (hasNote && !noteAttached) {
+        // Clear any lingering Premium upsell so it doesn't intercept clicks.
+        await dismissPremiumUpsellIfPresent(page);
+
+        if (!dialogClobbered) {
+          // Case A — reuse the still-clean first dialog.
+          console.log(
+            "[playwright] no-note fallback: reusing clean first dialog; sending without a note",
           );
-          return {
-            success: false,
-            provider: this.provider,
-            error: `Free custom-note quota exhausted; couldn't re-find Connect button to retry without note. Screenshot: ${screenshot}`,
-          };
+          activeDialog = dialog;
+          activeHasNote = false;
+        } else {
+          // Case B — reopen the Connect flow from a clean reload.
+          const reopened = await reopenConnectDialog(page, input.firstName);
+          if (reopened.status === "pending") {
+            // The note attempt actually registered the invite.
+            return {
+              success: true,
+              externalId: uid("pw-conn"),
+              provider: this.provider,
+            };
+          }
+          if (reopened.status === "error") {
+            return {
+              success: false,
+              provider: this.provider,
+              error: `${reopened.error} (original note failure: ${noteFailReason})`,
+            };
+          }
+          activeDialog = reopened.dialog;
+          activeHasNote = false;
         }
-        try {
-          await page
-            .locator(`[${CONNECT_MARKER_ATTR}="1"]`)
-            .first()
-            .click({ timeout: ACTION_TIMEOUT_MS });
-        } catch (err) {
-          const screenshot = await saveDebugScreenshot(
-            page,
-            "post-upsell-connect-click-failed",
-          );
-          return {
-            success: false,
-            provider: this.provider,
-            error: `Free custom-note quota exhausted; retry-Connect click failed: ${err instanceof Error ? err.message : String(err)}. Screenshot: ${screenshot}`,
-          };
-        }
-        await sleep(1200);
-        const retryDialog = page.locator('[role="dialog"]').first();
-        const retryDialogOpen = await retryDialog
-          .isVisible({ timeout: 5000 })
-          .catch(() => false);
-        if (!retryDialogOpen) {
-          const screenshot = await saveDebugScreenshot(
-            page,
-            "post-upsell-no-dialog",
-          );
-          return {
-            success: false,
-            provider: this.provider,
-            error: `Free custom-note quota exhausted; retry-Connect didn't reopen the invitation dialog. Screenshot: ${screenshot}`,
-          };
-        }
-        await saveDebugScreenshot(page, "post-upsell-invite-dialog");
-        activeDialog = retryDialog;
-        activeHasNote = false;
       }
 
       const sendResult = await clickSendInDialog(activeDialog, activeHasNote);
@@ -860,7 +984,7 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
       }
       console.log(
         `[playwright] Send clicked via: ${sendResult.diagnostic}${
-          hitFreeNoteLimit ? " (no-note retry after Premium upsell)" : ""
+          hasNote && !activeHasNote ? " (no-note fallback)" : ""
         }`,
       );
 
@@ -881,6 +1005,51 @@ export class PlaywrightLinkedInAdapter implements LinkedInAdapter {
       }
       await sleep(1200);
       await saveDebugScreenshot(page, "after-send");
+
+      // Ground truth (rule #9): the dialog dismissing is NOT proof the
+      // invite was sent. LinkedIn dismisses the dialog and THEN shows an
+      // error toast ("Sorry, invitation not sent … Please try again.")
+      // while leaving the top card on "Connect". So we (a) look for that
+      // failure toast and (b) confirm the top card actually flipped to
+      // "Pending" before claiming success.
+      const errToast = await detectSendErrorToast(page);
+      if (errToast) {
+        const screenshot = await saveDebugScreenshot(page, "send-error-toast");
+        return {
+          success: false,
+          provider: this.provider,
+          error: `LinkedIn rejected the invitation: "${errToast}" — the request was NOT sent. This is usually a per-profile or weekly invitation limit. Screenshot: ${screenshot}`,
+        };
+      }
+
+      // Poll for "Pending" in place; if it doesn't show, reload the profile
+      // once (most reliable signal) and re-check.
+      let pending = false;
+      for (let i = 0; i < 4 && !pending; i++) {
+        pending = await isPendingShown(page);
+        if (!pending) await sleep(700);
+      }
+      if (!pending) {
+        await page
+          .reload({
+            waitUntil: "domcontentloaded",
+            timeout: PROFILE_LOAD_TIMEOUT_MS,
+          })
+          .catch(() => {});
+        await sleep(2500);
+        for (let i = 0; i < 3 && !pending; i++) {
+          pending = await isPendingShown(page);
+          if (!pending) await sleep(800);
+        }
+      }
+      if (!pending) {
+        const screenshot = await saveDebugScreenshot(page, "send-unverified");
+        return {
+          success: false,
+          provider: this.provider,
+          error: `Clicked Send and the dialog closed, but the profile never showed "Pending" — the connection request was NOT actually sent (LinkedIn may have silently blocked it or only dismissed a Premium upsell). Screenshot: ${screenshot}`,
+        };
+      }
 
       return {
         success: true,

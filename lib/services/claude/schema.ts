@@ -4,6 +4,7 @@
 // server-side after the call returns).
 
 import { WIZ_CRITERIA } from "./wiz-criteria";
+import { LINKEDIN_FREE_NOTE_MAX_LENGTH } from "@/lib/services/linkedin/types";
 
 const dimension = {
   type: "object",
@@ -122,8 +123,7 @@ export const ANALYZE_TOOL_SCHEMA = {
           },
           body: {
             type: "string",
-            description:
-              "Message body. LinkedIn DM: ≤300 chars; Email: full multi-paragraph copy.",
+            description: `Message body. LinkedIn DM: MUST be ≤${LINKEDIN_FREE_NOTE_MAX_LENGTH} characters (LinkedIn's hard limit for a free-account connection note; longer notes get truncated), aim for ~${LINKEDIN_FREE_NOTE_MAX_LENGTH - 20}. Email: full multi-paragraph copy.`,
           },
         },
         required: ["stakeholderId", "channel", "step", "body"],
