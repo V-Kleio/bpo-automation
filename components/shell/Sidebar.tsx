@@ -8,6 +8,7 @@ import {
   Send,
   Briefcase,
   FileText,
+  Settings,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,12 @@ const NAV = [
     href: "/logs",
     label: "Logs & Analytics",
     icon: FileText,
+    layer: null,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: Settings,
     layer: null,
   },
 ] as const;

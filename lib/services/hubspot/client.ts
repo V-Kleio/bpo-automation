@@ -19,3 +19,7 @@ export function getHubSpotClient(): Client | null {
 export function _resetHubSpotClient() {
   cached = undefined;
 }
+
+// Production reset — called by the settings service after the HubSpot
+// token changes so the next getHubSpotClient() rebuilds from current env.
+export const resetHubSpotClient = _resetHubSpotClient;

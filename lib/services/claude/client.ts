@@ -32,3 +32,9 @@ export function getAnthropic(): Anthropic | null {
   cached = new Anthropic(init);
   return cached;
 }
+
+// Drop the cached SDK instance so the next getAnthropic() rebuilds it from
+// the current env — called by the settings service after credential changes.
+export function resetAnthropic(): void {
+  cached = undefined;
+}
