@@ -31,8 +31,11 @@ function readUsage(): UsageData {
 }
 
 function writeUsage(data: UsageData): void {
-  fs.mkdirSync(path.dirname(USAGE_FILE), { recursive: true });
-  fs.writeFileSync(USAGE_FILE, JSON.stringify(data, null, 2), "utf-8");
+  const dir = path.dirname(USAGE_FILE);
+  fs.mkdirSync(dir, { recursive: true });
+  const tmp = `${USAGE_FILE}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
+  fs.renameSync(tmp, USAGE_FILE);
 }
 
 export interface RateLimitState {
@@ -60,21 +63,27 @@ export class RateLimitExceededError extends Error {
   }
 }
 
+// Increment the daily counter. Callers must check getUsage().remaining > 0
+// before calling — acquireSlot no longer enforces the cap itself (that check
+// lives in the queue worker and the direct-send route so they can give the
+// user a clear error message before attempting the send).
 export function acquireSlot(): RateLimitState {
   const cap = getServerConfig().linkedin.dailyCap;
   const usage = readUsage();
-  if (usage.count >= cap) {
-    throw new RateLimitExceededError({
-      used: usage.count,
-      cap,
-      remaining: 0,
-    });
-  }
   const next = { date: usage.date, count: usage.count + 1 };
   writeUsage(next);
   return {
     used: next.count,
     cap,
-    remaining: cap - next.count,
+    remaining: Math.max(0, cap - next.count),
   };
+}
+
+// Roll back a slot increment when a send that already called acquireSlot()
+// ultimately fails. Prevents failed requests from eating into daily quota.
+export function releaseSlot(): void {
+  const usage = readUsage();
+  if (usage.count > 0) {
+    writeUsage({ date: usage.date, count: usage.count - 1 });
+  }
 }

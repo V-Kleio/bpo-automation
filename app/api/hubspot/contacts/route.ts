@@ -3,10 +3,8 @@ import { fetchHubSpotContacts } from "@/lib/services/hubspot/fetch-contacts";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const limit = Number(url.searchParams.get("limit") ?? "100");
-  const result = await fetchHubSpotContacts(limit);
+export async function GET() {
+  const result = await fetchHubSpotContacts();
   if (!result.configured) {
     return NextResponse.json({
       configured: false,

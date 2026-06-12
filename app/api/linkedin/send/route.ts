@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { selectAdapter } from "@/lib/services/linkedin";
 import {
   acquireSlot,
-  RateLimitExceededError,
+  getUsage,
 } from "@/lib/services/linkedin/rate-limiter";
 
 export const dynamic = "force-dynamic";
@@ -46,31 +46,28 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    acquireSlot();
-  } catch (err) {
-    if (err instanceof RateLimitExceededError) {
-      return NextResponse.json(
-        {
-          success: false,
-          provider,
-          error: err.message,
-          rateLimited: true,
-        },
-        { status: 429 },
-      );
-    }
-    throw err;
+  // Check cap before attempting the send — only count successful sends.
+  const usage = getUsage();
+  if (usage.remaining <= 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        provider,
+        error: `LinkedIn daily cap reached: ${usage.used} of ${usage.cap}. Try again tomorrow.`,
+        rateLimited: true,
+      },
+      { status: 429 },
+    );
   }
 
   try {
+    let result;
     if (body.kind === "connect") {
-      const result = await adapter.sendConnectionRequest({
+      result = await adapter.sendConnectionRequest({
         profileUrl: body.profileUrl,
         firstName: body.firstName,
         note: body.note,
       });
-      return NextResponse.json(result);
     } else {
       if (!body.body) {
         return NextResponse.json(
@@ -78,14 +75,18 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      const result = await adapter.sendDirectMessage({
+      result = await adapter.sendDirectMessage({
         profileUrl: body.profileUrl,
         firstName: body.firstName,
         body: body.body,
         subject: body.subject,
       });
-      return NextResponse.json(result);
     }
+    // Only count against the daily cap when the send actually succeeded.
+    if (result.success) {
+      acquireSlot();
+    }
+    return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(

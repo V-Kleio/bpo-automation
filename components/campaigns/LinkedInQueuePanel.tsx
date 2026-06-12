@@ -58,6 +58,7 @@ export function LinkedInQueuePanel() {
   const [snapshot, setSnapshot] = useState<QueueSnapshot | null>(null);
   const [linkedinLive, setLinkedinLive] = useState(false);
   const [enqueueing, setEnqueueing] = useState(false);
+  const [statusStale, setStatusStale] = useState(false);
   const claimedIdsRef = useRef<Set<string>>(new Set());
 
   // Identify pending stakeholders that can be auto-queued: those in active
@@ -118,8 +119,12 @@ export function LinkedInQueuePanel() {
       const res = await fetch("/api/linkedin/queue/status", {
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setStatusStale(true);
+        return;
+      }
       const data = (await res.json()) as QueueSnapshot;
+      setStatusStale(false);
       setSnapshot(data);
 
       // For each item we previously enqueued that has reached a terminal
@@ -184,7 +189,7 @@ export function LinkedInQueuePanel() {
         }
       }
     } catch {
-      // ignore
+      setStatusStale(true);
     }
   }, [appendTouchpoint, log, updateCampaignStage]);
 
@@ -199,6 +204,7 @@ export function LinkedInQueuePanel() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     const id = setInterval(refresh, 4000);
     return () => clearInterval(id);
@@ -267,13 +273,23 @@ export function LinkedInQueuePanel() {
   }
 
   async function clearFinished() {
-    await fetch("/api/linkedin/queue/clear", { method: "POST" });
+    const res = await fetch("/api/linkedin/queue/clear", { method: "POST" });
+    if (!res.ok) {
+      toast.error("Failed to clear queue history");
+      return;
+    }
     refresh();
   }
 
   async function clearAll() {
     if (!confirm("Cancel all pending LinkedIn sends?")) return;
-    await fetch("/api/linkedin/queue/clear?scope=all", { method: "POST" });
+    const res = await fetch("/api/linkedin/queue/clear?scope=all", {
+      method: "POST",
+    });
+    if (!res.ok) {
+      toast.error("Failed to cancel pending sends");
+      return;
+    }
     refresh();
   }
 
@@ -291,8 +307,13 @@ export function LinkedInQueuePanel() {
             <Send className="h-3.5 w-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-zinc-900">
+            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
               LinkedIn send queue
+              {statusStale && (
+                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  status unavailable — retrying…
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-zinc-500">
               {linkedinLive

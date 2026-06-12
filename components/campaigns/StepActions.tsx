@@ -14,6 +14,7 @@ import type {
   Stakeholder,
   Touchpoint,
 } from "@/lib/types";
+import { truncateNote } from "@/lib/services/linkedin/types";
 
 type SendKind = "connect" | "dm";
 
@@ -73,7 +74,7 @@ export function StepActions({
     const body =
       linkedinMessage?.body ??
       `Hi ${first} — open to a quick chat about reducing manual agent workload at ${company.name}?`;
-    const note = body.slice(0, 280);
+    const note = truncateNote(body);
 
     try {
       const res = await fetch("/api/linkedin/send", {

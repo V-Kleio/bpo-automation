@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/input";
 import { Send, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
 import { uid } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const SUGGESTED_PROMPTS = [
   "Why is this lead a priority fit?",
@@ -74,12 +75,21 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
     });
 
     let acc = "";
-    for await (const chunk of streamAskAI(trimmed, ctxIds)) {
-      acc += chunk;
-      updateChatMessage(assistantId, { content: acc });
+    try {
+      for await (const chunk of streamAskAI(trimmed, ctxIds)) {
+        acc += chunk;
+        updateChatMessage(assistantId, { content: acc });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      updateChatMessage(assistantId, {
+        content: acc + (acc ? "\n\n" : "") + `_(Stream error: ${msg})_`,
+      });
+      toast.error("Ask-Claude stream failed", { description: msg });
+    } finally {
+      updateChatMessage(assistantId, { streaming: false });
+      setBusy(false);
     }
-    updateChatMessage(assistantId, { streaming: false });
-    setBusy(false);
   }
 
   return (

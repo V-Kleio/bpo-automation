@@ -30,9 +30,10 @@ export interface FetchContactsResult {
   error?: string;
 }
 
-export async function fetchHubSpotContacts(
-  limit = 100,
-): Promise<FetchContactsResult> {
+// Hard cap to keep the sync bounded. 500 contacts → at most 5 API pages.
+const MAX_CONTACTS = 500;
+
+export async function fetchHubSpotContacts(): Promise<FetchContactsResult> {
   const client = getHubSpotClient();
   if (!client) {
     return {
@@ -44,12 +45,18 @@ export async function fetchHubSpotContacts(
     };
   }
   try {
-    const page = await client.crm.contacts.basicApi.getPage(
-      Math.min(100, Math.max(1, limit)),
-      undefined,
-      PROPERTIES,
-    );
-    const records = (page.results ?? []) as unknown as HubSpotContactRecord[];
+    const records: HubSpotContactRecord[] = [];
+    let after: string | undefined;
+    do {
+      const page = await client.crm.contacts.basicApi.getPage(
+        100,
+        after,
+        PROPERTIES,
+      );
+      records.push(...((page.results ?? []) as unknown as HubSpotContactRecord[]));
+      after = page.paging?.next?.after;
+    } while (after && records.length < MAX_CONTACTS);
+
     const { companies, stakeholders, skipped } =
       hubspotContactsToCompanies(records);
     return {

@@ -4,7 +4,6 @@ import { selectAdapter } from "./selector";
 import {
   acquireSlot,
   getUsage,
-  RateLimitExceededError,
 } from "./rate-limiter";
 import { randomDelayMs, sleep } from "./jitter";
 
@@ -168,6 +167,29 @@ export function clearAll(): number {
   return removed;
 }
 
+// Detect LinkedIn session-expiry errors by inspecting the error string the
+// adapter returns. When session expires mid-batch, we abort the rest rather
+// than burning rate-limit slots on requests that will all fail the same way.
+function isSessionExpiredError(msg: string | undefined): boolean {
+  return /(login|checkpoint|session.*no longer valid|authwall)/i.test(
+    msg ?? "",
+  );
+}
+
+// Fail all remaining pending items with a shared reason — called when a
+// fatal signal (session expired, provider removed) makes further sends
+// pointless.
+function failRemaining(state: QueueState, reason: string): void {
+  const now = new Date().toISOString();
+  for (const item of state.items) {
+    if (item.status === "pending") {
+      item.status = "failed";
+      item.finishedAt = now;
+      item.error = reason;
+    }
+  }
+}
+
 function startWorker(): void {
   const state = getState();
   if (state.workerPromise) return;
@@ -176,6 +198,15 @@ function startWorker(): void {
     state.running = false;
     state.nextEligibleAt = null;
     state.workerPromise = null;
+    // Recover any item left stuck at "sending" by an unexpected worker crash.
+    const now = new Date().toISOString();
+    for (const item of state.items) {
+      if (item.status === "sending") {
+        item.status = "failed";
+        item.finishedAt = now;
+        item.error = "Worker exited unexpectedly while this item was in-flight.";
+      }
+    }
   });
 }
 
@@ -189,17 +220,19 @@ async function runWorker(): Promise<void> {
     const { provider } = selectAdapter();
     if (provider === "mock") {
       // Fail all remaining items rather than silently looping forever.
-      const now = new Date().toISOString();
-      for (const item of state.items) {
-        if (item.status === "pending") {
-          item.status = "failed";
-          item.finishedAt = now;
-          item.error = "LinkedIn provider not configured.";
-        }
-      }
+      failRemaining(state, "LinkedIn provider not configured.");
       return;
     }
     await sendOne(next);
+    // If this item failed with a session-expiry signal, abort the rest —
+    // further sends will fail the same way and waste rate-limit checks.
+    if (next.status === "failed" && isSessionExpiredError(next.error)) {
+      failRemaining(
+        state,
+        "LinkedIn session expired — reauthenticate via the Connect LinkedIn button and re-queue.",
+      );
+      return;
+    }
     // Pace between items only if more remain.
     if (state.items.some((i) => i.status === "pending")) {
       const delay = randomDelayMs();
@@ -213,19 +246,18 @@ async function sendOne(item: QueueItem): Promise<void> {
   item.status = "sending";
   item.startedAt = new Date().toISOString();
 
-  try {
-    acquireSlot();
-  } catch (err) {
+  // Check daily cap before attempting the send. We do NOT increment the
+  // counter here — we only count the slot once the send actually succeeds,
+  // so failed/rejected requests don't eat into the daily allowance.
+  const state = getState();
+  const usage = getUsage();
+  if (usage.remaining <= 0) {
     item.status = "failed";
     item.finishedAt = new Date().toISOString();
-    item.error =
-      err instanceof RateLimitExceededError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : String(err);
+    item.error = `LinkedIn daily cap reached: ${usage.used} of ${usage.cap}. Try again tomorrow.`;
     return;
   }
+  void state; // suppress unused-var lint (used above for context)
 
   try {
     const { adapter } = selectAdapter();
@@ -246,6 +278,13 @@ async function sendOne(item: QueueItem): Promise<void> {
     if (result.success) {
       item.status = "sent";
       item.externalId = result.externalId;
+      // Count the slot only on success — failed sends don't consume quota.
+      try {
+        acquireSlot();
+      } catch {
+        // Cap was hit between the check and the send (race with direct-send
+        // endpoint). The item is already sent; just leave the slot uncounted.
+      }
     } else {
       item.status = "failed";
       item.error = result.error ?? "send failed";
@@ -256,3 +295,4 @@ async function sendOne(item: QueueItem): Promise<void> {
     item.error = err instanceof Error ? err.message : String(err);
   }
 }
+

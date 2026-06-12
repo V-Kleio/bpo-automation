@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BPO Automation — Change Log 2026-06-12</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #18181b;
+      background: #f4f4f5;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    header {
+      background: #18181b;
+      color: #fff;
+      border-radius: 10px;
+      padding: 2rem 2.5rem;
+      margin-bottom: 2rem;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p { color: #a1a1aa; font-size: 0.85rem; margin-top: 0.35rem; }
+    header .meta { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    header .meta span {
+      font-size: 0.78rem;
+      background: #27272a;
+      border-radius: 6px;
+      padding: 0.25rem 0.75rem;
+      color: #d4d4d8;
+    }
+
+    .section {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e4e4e7;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #f4f4f5;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .section-header h2 { font-size: 0.95rem; font-weight: 600; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.55rem;
+      border-radius: 99px;
+    }
+    .badge-bug    { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-error  { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+    .badge-qol    { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-new    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+    .section-body { padding: 1.25rem 1.5rem; }
+    .section-body p { margin-bottom: 0.6rem; color: #3f3f46; }
+    .section-body p:last-child { margin-bottom: 0; }
+    .section-body strong { color: #18181b; font-weight: 600; }
+
+    .files {
+      margin-top: 1rem;
+      background: #f9f9fb;
+      border: 1px solid #e4e4e7;
+      border-radius: 7px;
+      padding: 0.75rem 1rem;
+    }
+    .files-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #71717a;
+      margin-bottom: 0.5rem;
+    }
+    .file-list { display: flex; flex-direction: column; gap: 0.25rem; }
+    .file-tag {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.78rem;
+      color: #52525b;
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 5px;
+      padding: 0.2rem 0.6rem;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    th {
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #71717a;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #e4e4e7;
+      background: #fafafa;
+    }
+    td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #f4f4f5; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.77rem;
+      background: #f4f4f5;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .severity-high   { color: #b91c1c; font-weight: 600; }
+    .severity-medium { color: #c2410c; font-weight: 600; }
+    .severity-low    { color: #15803d; font-weight: 500; }
+
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #a1a1aa;
+      padding: 1.5rem 0 0.5rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>BPO Automation — Change Log</h1>
+    <p>Bug fixes, error handling improvements, and quality-of-life updates from the 2026-06-12 audit session.</p>
+    <div class="meta">
+      <span>📅 2026-06-12</span>
+      <span>7 fixes shipped</span>
+      <span>8 files modified</span>
+      <span>Branch: main</span>
+    </div>
+  </header>
+
+  <!-- Summary Table -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Summary</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Severity</th>
+          <th>Primary file</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Chat stream stuck on error — UI locked until reload</td>
+          <td><span class="badge badge-bug">Bug</span></td>
+          <td class="severity-high">High</td>
+          <td><code>AskAIChat.tsx</code></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Queue item stuck in "sending" forever if worker crashes</td>
+          <td><span class="badge badge-bug">Bug</span></td>
+          <td class="severity-high">High</td>
+          <td><code>queue.ts</code></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>StepActions direct-send note not truncated to 200 chars</td>
+          <td><span class="badge badge-bug">Bug</span></td>
+          <td class="severity-medium">Medium</td>
+          <td><code>StepActions.tsx</code></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Rate limiter write not atomic (TOCTOU race)</td>
+          <td><span class="badge badge-bug">Bug</span></td>
+          <td class="severity-medium">Medium</td>
+          <td><code>rate-limiter.ts</code></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Queue panel silently shows stale data when status endpoint fails</td>
+          <td><span class="badge badge-error">Error handling</span></td>
+          <td class="severity-medium">Medium</td>
+          <td><code>LinkedInQueuePanel.tsx</code></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Session expiry mid-batch burns rate-limit slots on doomed sends</td>
+          <td><span class="badge badge-error">Error handling</span></td>
+          <td class="severity-medium">Medium</td>
+          <td><code>queue.ts</code></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>HubSpot sync fetches only first 100 contacts (no pagination)</td>
+          <td><span class="badge badge-qol">QoL</span></td>
+          <td class="severity-medium">Medium</td>
+          <td><code>fetch-contacts.ts</code></td>
+        </tr>
+        <tr>
+          <td>★</td>
+          <td>Failed LinkedIn sends no longer consume daily quota</td>
+          <td><span class="badge badge-new">New</span></td>
+          <td class="severity-high">High</td>
+          <td><code>queue.ts · send/route.ts</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Fix 1 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-bug">Bug · High</span>
+      <h2>Fix 1 — Chat stream leaves UI permanently locked on error</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        The <code>for await (const chunk of streamAskAI(…))</code> loop in <code>AskAIChat.tsx</code>
+        had no error handling. If the stream errored mid-message (network drop, server error, Claude
+        API timeout), the assistant message stayed <strong><code>streaming: true</code></strong> forever
+        and the input stayed disabled — the UI was completely locked until a page reload.
+      </p>
+      <p>
+        <strong>Fix:</strong> The loop is now wrapped in <code>try/catch/finally</code>. On error, the
+        partial response is preserved in the message and an error notice is appended so the user can
+        see what failed. <code>streaming: false</code> and <code>setBusy(false)</code> are guaranteed
+        to run via <code>finally</code>, regardless of outcome.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">components/intelligence/AskAIChat.tsx</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 2 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-bug">Bug · High</span>
+      <h2>Fix 2 — Queue item stuck in "sending" if worker crashes unexpectedly</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        <code>sendOne()</code> always finishes an item, but <code>runWorker()</code> had no top-level
+        guard. If <code>selectAdapter()</code> or the inter-send sleep threw, the worker exited with
+        an item still at <code>status: "sending"</code>. Since <code>workerPromise</code> was then set
+        to <code>null</code>, no future enqueue would recover that item — it was stuck forever.
+      </p>
+      <p>
+        <strong>Fix:</strong> The <code>.finally()</code> block in <code>startWorker()</code> now
+        scans all items and resets any still at <code>"sending"</code> to <code>"failed"</code> with
+        a descriptive recovery message.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/linkedin/queue.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 3 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-bug">Bug · Medium</span>
+      <h2>Fix 3 — StepActions direct-send note truncated at 280 chars instead of 200</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        The "direct send" path in <code>StepActions.tsx</code> used <code>body.slice(0, 280)</code>
+        for the connection note, while LinkedIn's free-account cap is 200 characters. Notes between
+        201–280 characters were sent over the limit and arrived chopped mid-word on the recipient's side.
+      </p>
+      <p>
+        <strong>Fix:</strong> Replaced <code>body.slice(0, 280)</code> with the shared
+        <code>truncateNote(body)</code> helper from <code>lib/services/linkedin/types.ts</code>,
+        which trims at a word boundary with an ellipsis — consistent with the queue panel path.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">components/campaigns/StepActions.tsx</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 4 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-bug">Bug · Medium</span>
+      <h2>Fix 4 — Rate limiter file write not atomic (TOCTOU race)</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        <code>writeUsage()</code> wrote directly to <code>usage.json</code> with <code>fs.writeFileSync</code>.
+        If the queue worker and the <code>/api/linkedin/send</code> direct endpoint both called
+        <code>acquireSlot()</code> at the same moment, both could read <code>count=N</code>, both write
+        <code>count=N+1</code>, and one increment would be silently lost — under-counting against the
+        daily cap.
+      </p>
+      <p>
+        <strong>Fix:</strong> Adopted the same atomic <strong>write-to-temp + rename</strong> pattern
+        used in <code>lib/services/settings.ts</code>. The rename is atomic on all supported platforms,
+        so a concurrent reader always sees either the old or the new file — never a partial write.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/linkedin/rate-limiter.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix NEW (count only successes) -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-new">New feature · High impact</span>
+      <h2>★ New — Failed LinkedIn sends no longer consume the daily quota</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        Previously, the daily rate-limit slot was reserved <em>before</em> the send attempt. A failed
+        send (wrong button click, LinkedIn rejection, Pending verification failure) still counted
+        against the daily cap — penalising every retry and eating into the real allowance.
+      </p>
+      <p>
+        <strong>Fix:</strong> The <strong>slot is now only counted after a confirmed success</strong>.
+        Both the queue worker and the direct-send route check <code>getUsage().remaining</code> before
+        attempting the send (for an early-fail on cap reached), then call <code>acquireSlot()</code>
+        only when <code>result.success === true</code>. A <code>releaseSlot()</code> function was also
+        added to <code>rate-limiter.ts</code> for any future rollback needs.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/linkedin/rate-limiter.ts</span>
+          <span class="file-tag">lib/services/linkedin/queue.ts</span>
+          <span class="file-tag">app/api/linkedin/send/route.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 5 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-error">Error handling · Medium</span>
+      <h2>Fix 5 — Queue panel silently shows stale data when status endpoint fails</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        The <code>refresh()</code> polling callback had a bare <code>catch { // ignore }</code>. If the
+        <code>/api/linkedin/queue/status</code> endpoint returned a 5xx or timed out, the queue panel
+        continued displaying the last known counts with no indication they were stale.
+      </p>
+      <p>
+        <strong>Fix:</strong> Added <code>statusStale</code> state. When a poll fails (non-ok response
+        or thrown error), a small amber badge appears in the panel heading:
+        <em>"status unavailable — retrying…"</em>. It clears automatically on the next successful refresh.
+        The "Clear history" and "Cancel pending" buttons now also check <code>res.ok</code> and show a
+        <code>toast.error</code> if the server rejects the request, rather than silently calling
+        <code>refresh()</code> as if the clear succeeded.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">components/campaigns/LinkedInQueuePanel.tsx</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 6 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-error">Error handling · Medium</span>
+      <h2>Fix 6 — Session expiry mid-batch burns rate-limit slots and time</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        If the LinkedIn session expired during a batch run, the first item failed with a
+        "session redirected to login/checkpoint" error. The worker then continued processing the
+        remaining <code>"pending"</code> items — all of which would fail the same way — wasting the
+        inter-send delay and rate-limit checks on doomed requests.
+      </p>
+      <p>
+        <strong>Fix:</strong> After <code>sendOne()</code> completes, the worker inspects the error
+        string. If it matches the session-expiry pattern
+        (<code>/login|checkpoint|session.*no longer valid|authwall/i</code>), all remaining pending
+        items are immediately failed with a clear message:
+        <em>"LinkedIn session expired — reauthenticate via the Connect LinkedIn button and re-queue."</em>
+        The worker then exits cleanly. A shared <code>failRemaining()</code> helper is also used by the
+        existing mock-provider fast-fail path.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/linkedin/queue.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix 7 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-qol">QoL · Medium</span>
+      <h2>Fix 7 — HubSpot sync fetches only first 100 contacts (no pagination)</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        <code>fetchHubSpotContacts()</code> called <code>getPage(100, …)</code> exactly once, capping
+        results at 100 contacts regardless of portal size. Portals with more contacts would silently
+        miss the rest with no indication in the UI.
+      </p>
+      <p>
+        <strong>Fix:</strong> Implemented cursor-based pagination using HubSpot's
+        <code>page.paging.next.after</code> cursor. The function now loops until there are no more
+        pages or until a configurable hard cap of <strong>500 contacts</strong> (5 pages × 100) is
+        reached — preventing unbounded fetches on large portals. The unused <code>limit</code>
+        parameter was removed from both the function signature and the API route.
+      </p>
+      <div class="files">
+        <div class="files-label">Files changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/hubspot/fetch-contacts.ts</span>
+          <span class="file-tag">app/api/hubspot/contacts/route.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Also from this week (settings page etc.) -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Earlier this week — also shipped on main</h2>
+    </div>
+    <div class="section-body">
+      <p>These changes were committed earlier in the same session and are included for completeness:</p>
+      <ul style="margin: 0.5rem 0 0 1.25rem; line-height: 2;">
+        <li><strong>Settings page</strong> (<code>/settings</code>) — edit <code>.env.local</code> from the browser; secrets masked, immediate effect via <code>process.env</code> mutation + cache resets.</li>
+        <li><strong>LinkedIn note truncation</strong> — 200-char free-account limit enforced at the queue panel, adapter, and AI generation prompt; word-boundary trim with ellipsis.</li>
+        <li><strong>No-note fallback</strong> — when LinkedIn's free custom-note quota is exhausted, the adapter retries without a note (reload → clean Connect → Send without a note).</li>
+        <li><strong>Pending verification</strong> — send is only marked success after the profile top card flips to "Pending"; dialog-dismissal alone is no longer sufficient (fixes false-positive sent reports).</li>
+        <li><strong>Error toast detection</strong> — catches LinkedIn's "invitation not sent, please try again" toast that appears after the dialog closes.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<footer>Generated 2026-06-12 · BPO Automation internal docs</footer>
+</body>
+</html>
