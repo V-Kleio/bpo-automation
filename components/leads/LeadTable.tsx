@@ -11,6 +11,7 @@ import { StatusPill } from "./StatusPill";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import { ImportLeadsButton } from "./ImportLeadsButton";
 import { HubSpotSyncButton } from "./HubSpotSyncButton";
+import { DatabaseSyncButton } from "./DatabaseSyncButton";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { analyzeLeads } from "@/lib/services/ai-router";
 import {
@@ -248,6 +249,7 @@ export function LeadTable() {
           </span>
           <ImportLeadsButton />
           <HubSpotSyncButton />
+          <DatabaseSyncButton />
           <Button
             variant="accent"
             size="md"

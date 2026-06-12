@@ -22,6 +22,7 @@ import {
 import { resetAnthropic } from "@/lib/services/claude/client";
 import { resetHubSpotClient } from "@/lib/services/hubspot/client";
 import { resetAdapterCache } from "@/lib/services/linkedin/selector";
+import { resetDbPool } from "@/lib/services/db/client";
 
 const ENV_PATH = path.resolve(process.cwd(), ".env.local");
 
@@ -29,7 +30,8 @@ export type SettingGroup =
   | "claude"
   | "hubspot"
   | "linkedin_provider"
-  | "linkedin_pacing";
+  | "linkedin_pacing"
+  | "database";
 
 export type SettingType = "string" | "secret" | "boolean" | "number" | "enum";
 
@@ -48,7 +50,13 @@ export type EnvKey =
   | "LINKEDIN_PLAYWRIGHT_HEADLESS"
   | "LINKEDIN_DAILY_CAP"
   | "LINKEDIN_MIN_DELAY_MS"
-  | "LINKEDIN_MAX_DELAY_MS";
+  | "LINKEDIN_MAX_DELAY_MS"
+  | "DB_TYPE"
+  | "DB_HOST"
+  | "DB_PORT"
+  | "DB_NAME"
+  | "DB_USER"
+  | "DB_PASSWORD";
 
 export interface SettingField {
   key: EnvKey;
@@ -174,6 +182,49 @@ export const SETTING_FIELDS: readonly SettingField[] = [
     type: "number",
     placeholder: "600000",
   },
+  // ── MySQL database (Layer 1 data source) ──────────────────────────
+  {
+    key: "DB_TYPE",
+    label: "Database type",
+    group: "database",
+    type: "enum",
+    enumValues: ["mysql"],
+    help: "Only MySQL is supported. The container must be reachable from this host.",
+  },
+  {
+    key: "DB_HOST",
+    label: "Host",
+    group: "database",
+    type: "string",
+    placeholder: "127.0.0.1",
+  },
+  {
+    key: "DB_PORT",
+    label: "Port",
+    group: "database",
+    type: "number",
+    placeholder: "3306",
+  },
+  {
+    key: "DB_NAME",
+    label: "Database name",
+    group: "database",
+    type: "string",
+    placeholder: "bpo_db",
+  },
+  {
+    key: "DB_USER",
+    label: "Username",
+    group: "database",
+    type: "string",
+    placeholder: "root",
+  },
+  {
+    key: "DB_PASSWORD",
+    label: "Password",
+    group: "database",
+    type: "secret",
+  },
 ] as const;
 
 const SECRET_KEYS = new Set<EnvKey>([
@@ -181,6 +232,7 @@ const SECRET_KEYS = new Set<EnvKey>([
   "ANTHROPIC_AUTH_TOKEN",
   "HUBSPOT_PRIVATE_APP_TOKEN",
   "UNIPILE_API_KEY",
+  "DB_PASSWORD",
 ]);
 
 const FIELD_BY_KEY = new Map(SETTING_FIELDS.map((f) => [f.key, f]));
@@ -212,6 +264,7 @@ export interface SettingsView {
     webSearchEffective: boolean;
     mixedAuth: boolean;
   };
+  db: { configured: boolean };
 }
 
 function rawEnv(key: EnvKey): string {
@@ -275,6 +328,7 @@ export function readCurrentSettings(): SettingsView {
       mixedAuth:
         cfg.anthropic.apiKey.length > 0 && cfg.anthropic.authToken.length > 0,
     },
+    db: { configured: cfg.db.configured },
   };
 }
 
@@ -489,6 +543,16 @@ export function applySettings(
       changed.has("ENABLE_PLAYWRIGHT_LINKEDIN")
     ) {
       resetAdapterCache();
+    }
+    if (
+      changed.has("DB_HOST") ||
+      changed.has("DB_PORT") ||
+      changed.has("DB_NAME") ||
+      changed.has("DB_USER") ||
+      changed.has("DB_PASSWORD") ||
+      changed.has("DB_TYPE")
+    ) {
+      resetDbPool();
     }
   }
 

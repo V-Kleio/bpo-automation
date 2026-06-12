@@ -23,7 +23,8 @@ type SettingGroup =
   | "claude"
   | "hubspot"
   | "linkedin_provider"
-  | "linkedin_pacing";
+  | "linkedin_pacing"
+  | "database";
 
 interface SanitizedField {
   key: string;
@@ -75,6 +76,12 @@ const GROUPS: Array<{
     title: "LinkedIn Pacing",
     description:
       "Daily cap and inter-send jitter for the send queue. Changes apply to the next queued item.",
+  },
+  {
+    id: "database",
+    title: "MySQL Database",
+    description:
+      "Local MySQL container for Layer 1 lead acquisition. Credentials connect to the bpo-mysql Docker container.",
   },
 ];
 

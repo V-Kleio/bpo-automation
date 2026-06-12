@@ -1,22 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Cloud, Loader2 } from "lucide-react";
+import { Database, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { getClientConfig } from "@/lib/services/public-config-client";
 import type { Company, Stakeholder } from "@/lib/types";
 
-interface HubspotContactsResponse {
+interface DbLeadsResponse {
   configured: boolean;
   companies: Company[];
   stakeholders: Stakeholder[];
   fetched: number;
-  skippedNoCompany: number;
   error?: string;
 }
 
-export function HubSpotSyncButton() {
+export function DatabaseSyncButton() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const addCompanies = useStore((s) => s.addCompanies);
@@ -25,22 +24,22 @@ export function HubSpotSyncButton() {
 
   useEffect(() => {
     getClientConfig()
-      .then((cfg) => setAvailable(cfg.hubspot.configured))
+      .then((cfg) => setAvailable(cfg.db.configured))
       .catch(() => setAvailable(false));
   }, []);
 
   async function sync() {
     setBusy(true);
     try {
-      const res = await fetch("/api/hubspot/contacts", { cache: "no-store" });
-      const data = (await res.json()) as HubspotContactsResponse;
+      const res = await fetch("/api/db/leads", { cache: "no-store" });
+      const data = (await res.json()) as DbLeadsResponse;
       if (!data.configured) {
-        toast.info("HubSpot not configured — nothing to sync.");
+        toast.info("MySQL database not configured — nothing to sync.");
         setAvailable(false);
         return;
       }
       if (data.error) {
-        toast.error("HubSpot sync failed", { description: data.error });
+        toast.error("Database sync failed", { description: data.error });
         return;
       }
       const companiesAdded = addCompanies(data.companies);
@@ -48,27 +47,22 @@ export function HubSpotSyncButton() {
       log({
         layer: 1,
         type: "crm_sync",
-        summary: `Pulled ${data.fetched} contacts from HubSpot — ${companiesAdded} new compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} new contact${stakeholdersAdded === 1 ? "" : "s"}.`,
+        summary: `Pulled ${data.fetched} rows from MySQL — ${companiesAdded} new compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} new contact${stakeholdersAdded === 1 ? "" : "s"}.`,
         meta: {
-          source: "hubspot",
+          source: "mysql",
           fetched: data.fetched,
           companiesAdded,
           stakeholdersAdded,
-          skippedNoCompany: data.skippedNoCompany,
         },
       });
-      const skippedNote =
-        data.skippedNoCompany > 0
-          ? `${data.skippedNoCompany} contact${data.skippedNoCompany === 1 ? "" : "s"} skipped (no company name).`
-          : undefined;
       toast.success(
-        `${companiesAdded} compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} contact${stakeholdersAdded === 1 ? "" : "s"} synced from HubSpot`,
+        `${companiesAdded} compan${companiesAdded === 1 ? "y" : "ies"}, ${stakeholdersAdded} contact${stakeholdersAdded === 1 ? "" : "s"} synced from MySQL`,
         {
-          description: skippedNote,
+          description: `${data.fetched} rows read from database.`,
         },
       );
     } catch (err) {
-      toast.error("HubSpot sync failed", {
+      toast.error("Database sync failed", {
         description: err instanceof Error ? err.message : String(err),
       });
     } finally {
@@ -83,9 +77,9 @@ export function HubSpotSyncButton() {
       {busy ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <Cloud className="h-4 w-4" />
+        <Database className="h-4 w-4" />
       )}
-      Sync HubSpot
+      Sync MySQL
     </Button>
   );
 }

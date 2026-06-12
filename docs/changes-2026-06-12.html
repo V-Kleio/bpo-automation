@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BPO Automation — Change Log 2026-06-12</title>
+  <title>BPO Automation — Change Log 2026-06-12 (rev 2)</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -135,11 +135,11 @@
 
   <header>
     <h1>BPO Automation — Change Log</h1>
-    <p>Bug fixes, error handling improvements, and quality-of-life updates from the 2026-06-12 audit session.</p>
+    <p>Bug fixes, error handling improvements, quality-of-life updates, and new MySQL data source — 2026-06-12 session.</p>
     <div class="meta">
       <span>📅 2026-06-12</span>
-      <span>7 fixes shipped</span>
-      <span>8 files modified</span>
+      <span>8 fixes + 1 new feature</span>
+      <span>14 files modified</span>
       <span>Branch: main</span>
     </div>
   </header>
@@ -215,6 +215,13 @@
           <td><span class="badge badge-new">New</span></td>
           <td class="severity-high">High</td>
           <td><code>queue.ts · send/route.ts</code></td>
+        </tr>
+        <tr>
+          <td>◆</td>
+          <td>MySQL database as Layer 1 data source (Docker container)</td>
+          <td><span class="badge badge-new">New feature</span></td>
+          <td class="severity-high">High</td>
+          <td><code>db/client.ts · api/db/leads</code></td>
         </tr>
       </tbody>
     </table>
@@ -448,6 +455,66 @@
     </div>
   </div>
 
+  <!-- MySQL data source -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge badge-new">New feature · Layer 1</span>
+      <h2>◆ MySQL Database as Layer 1 Data Source</h2>
+    </div>
+    <div class="section-body">
+      <p>
+        Layer 1 (Lead Database) can now pull leads directly from a local MySQL Docker container
+        (<code>bpo-mysql</code>) in addition to CSV imports and HubSpot sync. A <strong>Sync MySQL</strong>
+        button appears on the Leads page whenever the database is configured — it mirrors the same
+        pattern as the HubSpot sync button.
+      </p>
+      <p>
+        <strong>Auto-discovery:</strong> The route queries <code>information_schema</code> and selects
+        the first table named <code>leads</code>, <code>contacts</code>, <code>companies</code>,
+        <code>prospects</code>, or <code>targets</code>; falls back to the first table in the database.
+        Up to 500 rows are fetched and mapped to Company + Stakeholder records. Rows with the same
+        company name are grouped; each row contributes at most one stakeholder.
+      </p>
+      <p>
+        <strong>Column mapping</strong> is case-insensitive and flexible — common names like
+        <code>company_name</code>, <code>company</code>, <code>contact_name</code>,
+        <code>linkedin_url</code>, <code>email</code>, <code>title</code>, <code>industry</code>,
+        <code>headcount</code>, <code>hq</code> are recognised automatically. Unknown columns are ignored.
+      </p>
+      <p>
+        <strong>Settings page:</strong> All five connection parameters (<code>DB_TYPE</code>,
+        <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USER</code>,
+        <code>DB_PASSWORD</code>) are now exposed in the <em>MySQL Database</em> group on the
+        <code>/settings</code> page. The password field is masked as a secret. Saving new credentials
+        resets the connection pool so the change takes effect immediately without a restart.
+      </p>
+      <p>
+        <strong>Default values</strong> (set in <code>.env.local</code>):
+        host <code>127.0.0.1</code>, port <code>3306</code>, database <code>bpo_db</code>,
+        user <code>root</code>, password <code>mypassword</code>.
+      </p>
+      <p>
+        Start the container with:<br />
+        <code style="display:block;margin-top:0.4rem;padding:0.5rem 0.75rem;background:#f4f4f5;border-radius:6px;font-size:0.8rem;">
+          docker run --name bpo-mysql -e MYSQL_ROOT_PASSWORD=mypassword -e MYSQL_DATABASE=bpo_db -p 3306:3306 -d mysql:8
+        </code>
+      </p>
+      <div class="files">
+        <div class="files-label">Files added / changed</div>
+        <div class="file-list">
+          <span class="file-tag">lib/services/db/client.ts <em>(new)</em></span>
+          <span class="file-tag">app/api/db/leads/route.ts <em>(new)</em></span>
+          <span class="file-tag">components/leads/DatabaseSyncButton.tsx <em>(new)</em></span>
+          <span class="file-tag">components/leads/LeadTable.tsx</span>
+          <span class="file-tag">lib/services/config.ts</span>
+          <span class="file-tag">lib/services/settings.ts</span>
+          <span class="file-tag">components/settings/SettingsForm.tsx</span>
+          <span class="file-tag">.env.local.example</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Also from this week (settings page etc.) -->
   <div class="section">
     <div class="section-header">
@@ -466,6 +533,6 @@
   </div>
 
 </div>
-<footer>Generated 2026-06-12 · BPO Automation internal docs</footer>
+<footer>Generated 2026-06-12 (rev 2) · BPO Automation internal docs · Requires: <code>mysql2@3.x</code> (<code>npm install mysql2</code>)</footer>
 </body>
 </html>

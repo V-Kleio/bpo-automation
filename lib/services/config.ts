@@ -44,6 +44,11 @@ export function getServerConfig() {
     trim(process.env.LINKEDIN_MAX_DELAY_MS) || "600000",
   );
 
+  const dbHost = trim(process.env.DB_HOST);
+  const dbUser = trim(process.env.DB_USER);
+  const dbName = trim(process.env.DB_NAME);
+  const dbConfigured = dbHost.length > 0 && dbUser.length > 0 && dbName.length > 0;
+
   return {
     anthropic: {
       // hasKey now means "has any usable auth": either a first-party API key
@@ -91,6 +96,16 @@ export function getServerConfig() {
       minDelayMs,
       maxDelayMs,
     },
+    db: {
+      configured: dbConfigured,
+      type: trim(process.env.DB_TYPE) || "mysql",
+      host: dbHost,
+      port: Number(trim(process.env.DB_PORT) || "3306"),
+      name: dbName,
+      user: dbUser,
+      // Password is read on-demand in the DB client — not stored in this
+      // config object to keep it out of server logs.
+    },
   };
 }
 
@@ -124,6 +139,7 @@ export interface PublicConfig {
     authenticated: boolean;
     dailyCap: number;
   };
+  db: { configured: boolean };
 }
 
 export function getPublicFlags(): PublicConfig {
@@ -140,5 +156,6 @@ export function getPublicFlags(): PublicConfig {
         (provider === "playwright" && cfg.linkedin.playwright.hasSession),
       dailyCap: cfg.linkedin.dailyCap,
     },
+    db: { configured: cfg.db.configured },
   };
 }
