@@ -4,7 +4,8 @@ import { useStore } from "@/lib/store";
 import { streamAskAI } from "@/lib/services/ai-router";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
-import { Send, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Send, Sparkles, MessageSquare, RotateCcw, Copy, Check } from "lucide-react";
 import { uid } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
 
   // Filter to context-specific thread when companyId is set; otherwise show recent
   const visible = companyId
@@ -33,12 +35,14 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
       )
     : messages;
 
+  const last = visible[visible.length - 1];
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [visible.length, visible[visible.length - 1]?.content]);
+    // Re-pin to bottom as tokens stream in (content + streaming flag change).
+  }, [visible.length, last?.content, last?.streaming]);
 
   async function send(prompt: string) {
     const trimmed = prompt.trim();
@@ -94,6 +98,7 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
 
   return (
     <div className="flex h-full flex-col bg-zinc-50">
+      {confirmDialog}
       <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-white">
@@ -110,8 +115,16 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
           <Button
             variant="ghost"
             size="iconSm"
-            onClick={() => {
-              if (confirm("Clear this chat?")) {
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Clear this chat?",
+                  description:
+                    "All messages in this thread will be removed. This can't be undone.",
+                  confirmLabel: "Clear chat",
+                  destructive: true,
+                })
+              ) {
                 useStore.setState({ chat: [] });
               }
             }}
@@ -139,13 +152,13 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
           <div
             key={m.id}
             className={cn(
-              "flex",
+              "group flex",
               m.role === "user" ? "justify-end" : "justify-start",
             )}
           >
             <div
               className={cn(
-                "max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-sm",
+                "relative max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-sm",
                 m.role === "user"
                   ? "bg-zinc-900 text-white"
                   : "bg-white text-zinc-800 border border-zinc-200",
@@ -159,6 +172,9 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
               >
                 {m.content || (m.streaming ? "" : "…")}
               </pre>
+              {m.role === "assistant" && !m.streaming && m.content && (
+                <CopyMessageButton text={m.content} />
+              )}
             </div>
           </div>
         ))}
@@ -205,5 +221,28 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function CopyMessageButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+        toast.success("Response copied");
+      }}
+      title="Copy response"
+      className="absolute -bottom-2 -right-2 rounded-md border border-zinc-200 bg-white p-1 text-zinc-500 opacity-0 shadow-sm transition-opacity hover:text-zinc-900 group-hover:opacity-100"
+    >
+      {copied ? (
+        <Check className="h-3 w-3 text-emerald-600" />
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+    </button>
   );
 }

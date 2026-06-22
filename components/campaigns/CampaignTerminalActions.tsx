@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CalendarCheck, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
@@ -16,6 +17,7 @@ export function CampaignTerminalActions({
 }) {
   const updateCampaignStage = useStore((s) => s.updateCampaignStage);
   const log = useStore((s) => s.log);
+  const [confirm, confirmDialog] = useConfirm();
 
   const terminal =
     campaign.stage === "meeting_booked" || campaign.stage === "disqualified";
@@ -40,8 +42,15 @@ export function CampaignTerminalActions({
     toast.success(`Meeting booked with ${company.name}`);
   }
 
-  function disqualify() {
-    if (!confirm(`Disqualify ${company.name}?`)) return;
+  async function disqualify() {
+    const ok = await confirm({
+      title: `Disqualify ${company.name}?`,
+      description:
+        "The campaign moves to a terminal state and the linked deal is marked closed-lost. This can't be undone from here.",
+      confirmLabel: "Disqualify",
+      destructive: true,
+    });
+    if (!ok) return;
     const nowIso = new Date().toISOString();
     updateCampaignStage(company.id, "disqualified", nowIso);
     syncDealFromStage(company.id, "closed_lost", nowIso);
@@ -71,6 +80,7 @@ export function CampaignTerminalActions({
 
   return (
     <div className="flex flex-wrap gap-2">
+      {confirmDialog}
       <Button variant="success" size="sm" onClick={markMeetingBooked}>
         <CalendarCheck className="h-3.5 w-3.5" />
         Mark meeting booked

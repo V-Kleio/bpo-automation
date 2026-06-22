@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore, selectCompany } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
 import { DEAL_STAGE_LABEL, type DealStage } from "@/lib/types";
 import { TierBadge } from "@/components/leads/TierBadge";
 import { ActivityDrawer } from "./ActivityDrawer";
+import { useLocalStorageState } from "@/lib/hooks/use-local-storage-state";
 import { formatRelative } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { CircleDollarSign, User } from "lucide-react";
+import { ArrowUpDown, CircleDollarSign, User } from "lucide-react";
+
+type DealSort = "activity" | "amount" | "name";
 
 const STAGE_ORDER: DealStage[] = [
   "new",
@@ -29,8 +33,35 @@ const STAGE_TONE: Record<DealStage, string> = {
 
 export function DealPipeline() {
   const deals = useStore((s) => s.deals);
+  const companies = useStore((s) => s.companies);
   const now = useStore((s) => s.clock.simulatedTime);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [sort, setSort] = useLocalStorageState<DealSort>(
+    "crm.dealSort",
+    "activity",
+  );
+
+  // Resolve company names once for name-based sorting.
+  const nameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of companies) m.set(c.id, c.name);
+    return m;
+  }, [companies]);
+
+  const sortDeals = useMemo(() => {
+    return (items: typeof deals) =>
+      [...items].sort((a, b) => {
+        if (sort === "amount") return (b.amount ?? 0) - (a.amount ?? 0);
+        if (sort === "name")
+          return (nameById.get(a.companyId) ?? "").localeCompare(
+            nameById.get(b.companyId) ?? "",
+          );
+        // activity: most recently touched first ("" sorts last)
+        return (b.activities[0]?.at ?? "").localeCompare(
+          a.activities[0]?.at ?? "",
+        );
+      });
+  }, [sort, nameById]);
 
   if (deals.length === 0) {
     return (
@@ -43,10 +74,25 @@ export function DealPipeline() {
 
   return (
     <>
+      <div className="mb-3 flex items-center justify-end gap-2">
+        <label className="flex items-center gap-1.5 text-xs text-zinc-600">
+          <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400" />
+          Sort cards by
+          <Select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as DealSort)}
+            className="h-7 text-xs"
+          >
+            <option value="activity">Recent activity</option>
+            <option value="amount">Amount (high → low)</option>
+            <option value="name">Company (A → Z)</option>
+          </Select>
+        </label>
+      </div>
       <div className="overflow-x-auto">
         <div className="flex min-w-max gap-3 pb-2">
           {STAGE_ORDER.map((stage) => {
-            const items = deals.filter((d) => d.stage === stage);
+            const items = sortDeals(deals.filter((d) => d.stage === stage));
             const total = items.reduce((sum, d) => sum + (d.amount ?? 0), 0);
             return (
               <div key={stage} className="w-72 shrink-0">

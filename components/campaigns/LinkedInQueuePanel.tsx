@@ -8,8 +8,10 @@ import {
   Clock,
   Send,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { uid, formatRelative } from "@/lib/utils";
@@ -60,6 +62,7 @@ export function LinkedInQueuePanel() {
   const [enqueueing, setEnqueueing] = useState(false);
   const [statusStale, setStatusStale] = useState(false);
   const claimedIdsRef = useRef<Set<string>>(new Set());
+  const [confirm, confirmDialog] = useConfirm();
 
   // Identify pending stakeholders that can be auto-queued: those in active
   // campaigns whose active step's stakeholder has a LinkedIn URL and no
@@ -282,7 +285,14 @@ export function LinkedInQueuePanel() {
   }
 
   async function clearAll() {
-    if (!confirm("Cancel all pending LinkedIn sends?")) return;
+    const pending = snapshot?.pending ?? 0;
+    const ok = await confirm({
+      title: "Cancel pending sends?",
+      description: `${pending} queued LinkedIn invite${pending === 1 ? "" : "s"} will be removed from the queue. Sends already in flight or completed are unaffected.`,
+      confirmLabel: "Cancel pending",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch("/api/linkedin/queue/clear?scope=all", {
       method: "POST",
     });
@@ -293,14 +303,53 @@ export function LinkedInQueuePanel() {
     refresh();
   }
 
+  async function retryFailedSends() {
+    // Un-claim failed items so their next terminal state is re-processed
+    // (a retried item that later succeeds must still record its touchpoint).
+    const failedIds = (snapshot?.items ?? [])
+      .filter((i) => i.status === "failed")
+      .map((i) => i.id);
+    if (failedIds.length === 0) return;
+    for (const id of failedIds) claimedIdsRef.current.delete(id);
+    try {
+      const res = await fetch("/api/linkedin/queue/retry", { method: "POST" });
+      const data = (await res.json()) as {
+        retried?: string[];
+        error?: string;
+      };
+      if (!res.ok) {
+        toast.error("Could not retry failed sends", {
+          description: data.error,
+        });
+        return;
+      }
+      const n = data.retried?.length ?? 0;
+      toast.success(`Retrying ${n} failed send${n === 1 ? "" : "s"}`, {
+        description: "Worker is re-pacing the queue.",
+      });
+      refresh();
+    } catch (err) {
+      toast.error("Failed to retry sends", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   if (campaigns.length === 0) return null;
 
   const totalInFlight =
     (snapshot?.pending ?? 0) + (snapshot?.sending ?? 0);
   const showPanel = totalInFlight > 0 || (snapshot?.sent ?? 0) > 0 || (snapshot?.failed ?? 0) > 0;
 
+  const nearCapThreshold = snapshot
+    ? Math.max(3, Math.ceil(snapshot.dailyCap * 0.2))
+    : 0;
+  const nearCap =
+    linkedinLive && snapshot != null && snapshot.remaining <= nearCapThreshold;
+
   return (
     <div className="mb-3 flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+      {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50 text-blue-700">
@@ -325,6 +374,28 @@ export function LinkedInQueuePanel() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {nearCap && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium",
+                snapshot!.remaining <= 0
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700",
+              )}
+              title="LinkedIn daily send cap"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {snapshot!.remaining <= 0
+                ? "Daily cap reached"
+                : `${snapshot!.remaining} send${snapshot!.remaining === 1 ? "" : "s"} left today`}
+            </span>
+          )}
+          {(snapshot?.failed ?? 0) > 0 && (
+            <Button variant="outline" size="sm" onClick={retryFailedSends}>
+              <RotateCcw className="h-3.5 w-3.5" />
+              Retry failed ({snapshot!.failed})
+            </Button>
+          )}
           {totalInFlight > 0 && (
             <Button variant="outline" size="sm" onClick={clearAll}>
               <Trash2 className="h-3.5 w-3.5" />

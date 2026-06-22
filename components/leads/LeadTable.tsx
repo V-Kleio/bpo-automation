@@ -19,9 +19,13 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
   Mail,
 } from "lucide-react";
 import { LinkedinIcon } from "@/components/ui/icons";
+import { useLocalStorageState } from "@/lib/hooks/use-local-storage-state";
 import type { Tier, LeadStatus } from "@/lib/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -30,17 +34,48 @@ type Channel = "linkedin" | "email";
 const PAGE_SIZES = [10, 25, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZES)[number] | "all";
 
+// Sortable columns and the rank maps for the categorical ones.
+type SortKey = "name" | "headcount" | "tier" | "status" | "score";
+type SortDir = "asc" | "desc";
+const TIER_RANK: Record<Tier, number> = { priority: 3, warm: 2, nurture: 1 };
+const STATUS_RANK: Record<LeadStatus, number> = {
+  qualified: 4,
+  analyzing: 3,
+  pending_analysis: 2,
+  disqualified: 1,
+};
+
 export function LeadTable() {
   const companies = useStore((s) => s.companies);
   const stakeholders = useStore((s) => s.stakeholders);
-  const [search, setSearch] = useState("");
-  const [tierFilter, setTierFilter] = useState<Set<Tier>>(new Set());
-  const [statusFilter, setStatusFilter] = useState<Set<LeadStatus>>(new Set());
-  const [channelFilter, setChannelFilter] = useState<Set<Channel>>(new Set());
+  // View preferences persist across reloads/navigation. Sets aren't
+  // JSON-serializable, so filters are stored as arrays and adapted to Sets for
+  // the filter UI and lookups.
+  const [search, setSearch] = useLocalStorageState("leads.search", "");
+  const [tierArr, setTierArr] = useLocalStorageState<Tier[]>("leads.tiers", []);
+  const [statusArr, setStatusArr] = useLocalStorageState<LeadStatus[]>(
+    "leads.statuses",
+    [],
+  );
+  const [channelArr, setChannelArr] = useLocalStorageState<Channel[]>(
+    "leads.channels",
+    [],
+  );
+  const [pageSize, setPageSize] = useLocalStorageState<PageSize>(
+    "leads.pageSize",
+    25,
+  );
+  const [sort, setSort] = useLocalStorageState<{
+    key: SortKey;
+    dir: SortDir;
+  } | null>("leads.sort", null);
+  const tierFilter = useMemo(() => new Set(tierArr), [tierArr]);
+  const statusFilter = useMemo(() => new Set(statusArr), [statusArr]);
+  const channelFilter = useMemo(() => new Set(channelArr), [channelArr]);
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openDrawerId, setOpenDrawerId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [pageSize, setPageSize] = useState<PageSize>(25);
   const [page, setPage] = useState(1);
 
   // companyId -> { linkedin, email } presence flags, derived from stakeholders
@@ -85,26 +120,53 @@ export function LeadTable() {
     channelByCompany,
   ]);
 
+  // Sorting — applied after filtering, before pagination.
+  const sorted = useMemo(() => {
+    if (!sort) return filtered;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const val = (c: (typeof filtered)[number]): number | string => {
+      switch (sort.key) {
+        case "name":
+          return c.name.toLowerCase();
+        case "headcount":
+          return c.headcount;
+        case "tier":
+          return TIER_RANK[c.tier];
+        case "status":
+          return STATUS_RANK[c.status];
+        case "score":
+          return c.analysis?.priorityScore ?? -1;
+      }
+    };
+    return [...filtered].sort((a, b) => {
+      const av = val(a);
+      const bv = val(b);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [filtered, sort]);
+
   // Pagination
   const totalPages =
-    pageSize === "all" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+    pageSize === "all" ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const startIdx = pageSize === "all" ? 0 : (safePage - 1) * pageSize;
   const endIdx =
-    pageSize === "all" ? filtered.length : startIdx + (pageSize as number);
-  const visible = filtered.slice(startIdx, endIdx);
+    pageSize === "all" ? sorted.length : startIdx + (pageSize as number);
+  const visible = sorted.slice(startIdx, endIdx);
 
   // Filter handlers — also reset to page 1 when the active filter set changes
   function applyTierFilter(next: Set<Tier>) {
-    setTierFilter(next);
+    setTierArr([...next]);
     setPage(1);
   }
   function applyStatusFilter(next: Set<LeadStatus>) {
-    setStatusFilter(next);
+    setStatusArr([...next]);
     setPage(1);
   }
   function applyChannelFilter(next: Set<Channel>) {
-    setChannelFilter(next);
+    setChannelArr([...next]);
     setPage(1);
   }
   function applySearch(v: string) {
@@ -113,6 +175,16 @@ export function LeadTable() {
   }
   function applyPageSize(v: PageSize) {
     setPageSize(v);
+    setPage(1);
+  }
+
+  // Cycle a column through asc → desc → unsorted; switching columns starts asc.
+  function toggleSort(key: SortKey) {
+    setSort((prev) => {
+      if (!prev || prev.key !== key) return { key, dir: "asc" };
+      if (prev.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
     setPage(1);
   }
 
@@ -185,8 +257,19 @@ export function LeadTable() {
     }
   }
 
-  const showingFrom = filtered.length === 0 ? 0 : startIdx + 1;
-  const showingTo = Math.min(endIdx, filtered.length);
+  const showingFrom = sorted.length === 0 ? 0 : startIdx + 1;
+  const showingTo = Math.min(endIdx, sorted.length);
+
+  // Page-number jump input: keep a local draft so the user can type freely,
+  // committing (clamped to [1, totalPages]) on Enter or blur.
+  const [pageDraft, setPageDraft] = useState("");
+  function commitPageDraft() {
+    const n = Number(pageDraft);
+    if (Number.isFinite(n) && n >= 1) {
+      setPage(Math.min(Math.floor(n), totalPages));
+    }
+    setPageDraft("");
+  }
 
   return (
     <div className="space-y-4">
@@ -281,13 +364,13 @@ export function LeadTable() {
                   onCheckedChange={toggleAll}
                 />
               </th>
-              <th className="px-3 py-2.5">Company</th>
+              <SortHeader label="Company" sortKey="name" sort={sort} onSort={toggleSort} />
               <th className="px-3 py-2.5">Industry</th>
-              <th className="px-3 py-2.5">Size</th>
-              <th className="px-3 py-2.5">Tier</th>
+              <SortHeader label="Size" sortKey="headcount" sort={sort} onSort={toggleSort} />
+              <SortHeader label="Tier" sortKey="tier" sort={sort} onSort={toggleSort} />
               <th className="px-3 py-2.5">Channels</th>
               <th className="px-3 py-2.5">Intent Signals</th>
-              <th className="px-3 py-2.5">Status</th>
+              <SortHeader label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
             </tr>
           </thead>
           <tbody>
@@ -430,8 +513,33 @@ export function LeadTable() {
               <ChevronLeft className="h-4 w-4" />
               Prev
             </Button>
-            <span className="px-2 text-xs tabular-nums text-zinc-700">
-              Page {safePage} of {totalPages}
+            <span className="flex items-center gap-1.5 px-2 text-xs tabular-nums text-zinc-700">
+              Page
+              <Input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={pageDraft === "" ? String(safePage) : pageDraft}
+                onChange={(e) => setPageDraft(e.target.value)}
+                onFocus={(e) => {
+                  setPageDraft(String(safePage));
+                  e.target.select();
+                }}
+                onBlur={commitPageDraft}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    commitPageDraft();
+                    e.currentTarget.blur();
+                  } else if (e.key === "Escape") {
+                    setPageDraft("");
+                    e.currentTarget.blur();
+                  }
+                }}
+                disabled={totalPages <= 1}
+                className="h-7 w-14 px-1.5 text-center text-xs tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                aria-label="Go to page"
+              />
+              of {totalPages}
             </span>
             <Button
               variant="outline"
@@ -451,5 +559,37 @@ export function LeadTable() {
         onClose={() => setOpenDrawerId(null)}
       />
     </div>
+  );
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: SortDir } | null;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sort?.key === sortKey;
+  return (
+    <th className="px-3 py-2.5">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn(
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-zinc-200/60",
+          active ? "text-zinc-900" : "text-zinc-500",
+        )}
+        title={`Sort by ${label}`}
+      >
+        {label}
+        {!active && <ChevronsUpDown className="h-3 w-3 opacity-50" />}
+        {active && sort?.dir === "asc" && <ChevronUp className="h-3 w-3" />}
+        {active && sort?.dir === "desc" && <ChevronDown className="h-3 w-3" />}
+      </button>
+    </th>
   );
 }

@@ -167,6 +167,24 @@ export function clearAll(): number {
   return removed;
 }
 
+// Reset all failed items back to pending and restart the worker. Returns the
+// ids that were re-queued so callers can re-process their terminal state.
+export function retryFailed(): { retried: string[] } {
+  const state = getState();
+  const retried: string[] = [];
+  for (const item of state.items) {
+    if (item.status === "failed") {
+      item.status = "pending";
+      item.error = undefined;
+      item.startedAt = undefined;
+      item.finishedAt = undefined;
+      retried.push(item.id);
+    }
+  }
+  if (retried.length > 0) startWorker();
+  return { retried };
+}
+
 // Detect LinkedIn session-expiry errors by inspecting the error string the
 // adapter returns. When session expires mid-batch, we abort the rest rather
 // than burning rate-limit slots on requests that will all fail the same way.
