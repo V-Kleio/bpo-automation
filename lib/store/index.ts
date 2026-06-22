@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "sonner";
 import { uid } from "@/lib/utils";
 import type {
   Company,
@@ -276,17 +277,66 @@ export const useStore = create<State>()(
     {
       name: "bpo-automation-store",
       version: 2,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        companies: state.companies,
-        stakeholders: state.stakeholders,
-        campaigns: state.campaigns,
-        deals: state.deals,
-        logs: state.logs,
-        chat: state.chat,
-        clock: { ...state.clock, running: false }, // never resume clock
-        selectedCompanyId: state.selectedCompanyId,
-      }),
+      storage: createJSONStorage(() => ({
+        getItem: (name: string) => {
+          try {
+            return localStorage.getItem(name);
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name: string, value: string) => {
+          try {
+            localStorage.setItem(name, value);
+          } catch (e) {
+            if (e instanceof DOMException) {
+              toast.warning("Storage quota exceeded", {
+                description:
+                  "State will not persist across page reloads. Analyze or push fewer companies to campaigns to reduce storage use.",
+                duration: 8000,
+                id: "storage-quota",
+              });
+            }
+          }
+        },
+        removeItem: (name: string) => {
+          try {
+            localStorage.removeItem(name);
+          } catch {
+            // ignore
+          }
+        },
+      })),
+      partialize: (state) => {
+        // Always persist companies that have been analyzed or pushed to campaigns —
+        // those have work attached. For raw (pending_analysis, not in campaign)
+        // companies, cap at MAX_RAW_PERSISTED to avoid blowing past the ~5 MB
+        // localStorage limit on large (40k+) imports.
+        const MAX_RAW_PERSISTED = 500;
+        const campaignIds = new Set(state.campaigns.map((c) => c.companyId));
+        const worked = state.companies.filter(
+          (c) => c.status !== "pending_analysis" || campaignIds.has(c.id),
+        );
+        const raw = state.companies
+          .filter(
+            (c) => c.status === "pending_analysis" && !campaignIds.has(c.id),
+          )
+          .slice(0, MAX_RAW_PERSISTED);
+        const persistedCompanies = [...worked, ...raw];
+        const persistedIds = new Set(persistedCompanies.map((c) => c.id));
+        return {
+          companies: persistedCompanies,
+          stakeholders: state.stakeholders.filter((s) =>
+            persistedIds.has(s.companyId),
+          ),
+          campaigns: state.campaigns,
+          deals: state.deals,
+          logs: state.logs,
+          chat: state.chat,
+          clock: { ...state.clock, running: false },
+          selectedCompanyId: state.selectedCompanyId,
+        };
+      },
     },
   ),
 );

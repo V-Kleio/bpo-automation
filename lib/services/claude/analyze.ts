@@ -114,7 +114,18 @@ export async function analyzeCompany(
     (b) => b.type === "server_tool_use" && b.name === "web_search",
   ).length;
 
-  const input = toolUse.input as Partial<ToolInputShape>;
+  // Some model versions/gateways wrap the entire tool input inside a
+  // "parameter" key — unwrap it before validation.
+  let rawInput = toolUse.input as Record<string, unknown>;
+  if (
+    Object.keys(rawInput).length === 1 &&
+    "parameter" in rawInput &&
+    typeof rawInput.parameter === "object" &&
+    rawInput.parameter !== null
+  ) {
+    rawInput = rawInput.parameter as Record<string, unknown>;
+  }
+  const input = rawInput as Partial<ToolInputShape>;
   if (
     typeof input.priorityScore !== "number" ||
     !input.qualification ||
@@ -123,7 +134,7 @@ export async function analyzeCompany(
     throw new Error(
       `submit_lead_analysis returned incomplete payload (stop_reason=${response.stop_reason}, ` +
         `output_tokens=${response.usage.output_tokens}). ` +
-        `Missing required fields — model may have hit max_tokens. Got keys: ${Object.keys(input).join(", ") || "(empty)"}.`,
+        `Missing required fields — model may have hit max_tokens. Got keys: ${Object.keys(rawInput).join(", ") || "(empty)"}.`,
     );
   }
   const rawMessages = input.generatedMessages;
