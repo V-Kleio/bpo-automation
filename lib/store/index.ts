@@ -337,6 +337,25 @@ export const useStore = create<State>()(
           selectedCompanyId: state.selectedCompanyId,
         };
       },
+      onRehydrateStorage: () => (state) => {
+        // No analysis can be in flight across a page load, so any lead left in
+        // "analyzing" is stale — the result of a run whose stream was cut short
+        // (e.g. a navigation/reload mid-analysis). Reset it to "pending_analysis"
+        // so the Lead Database view never shows a permanently-stuck row.
+        // Deferred so the store singleton is fully assigned before setState.
+        if (!state) return;
+        if (state.companies.some((c) => c.status === "analyzing")) {
+          setTimeout(() => {
+            useStore.setState((s) => ({
+              companies: s.companies.map((c) =>
+                c.status === "analyzing"
+                  ? { ...c, status: "pending_analysis" }
+                  : c,
+              ),
+            }));
+          }, 0);
+        }
+      },
     },
   ),
 );

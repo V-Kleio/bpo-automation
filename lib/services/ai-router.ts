@@ -96,33 +96,41 @@ export async function analyzeLeads(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let nl: number;
-    while ((nl = buffer.indexOf("\n")) >= 0) {
-      const line = buffer.slice(0, nl).trim();
-      buffer = buffer.slice(nl + 1);
-      if (!line) continue;
-      try {
-        const parsed = JSON.parse(line) as AnalyzeLine;
-        handleLine(parsed, succeeded, failed);
-      } catch {
-        // skip unparseable line
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        try {
+          const parsed = JSON.parse(line) as AnalyzeLine;
+          handleLine(parsed, succeeded, failed);
+        } catch {
+          // skip unparseable line
+        }
       }
     }
-  }
-  if (buffer.trim()) {
-    try {
-      handleLine(JSON.parse(buffer) as AnalyzeLine, succeeded, failed);
-    } catch {
-      // ignore trailing garbage
+    if (buffer.trim()) {
+      try {
+        handleLine(JSON.parse(buffer) as AnalyzeLine, succeeded, failed);
+      } catch {
+        // ignore trailing garbage
+      }
     }
-  }
-
-  if (failed.length > 0) {
-    revertAnalyzingStatus(failed.map((f) => f.id));
+  } catch (err) {
+    // The stream was interrupted before every lead came back — e.g. the user
+    // navigated away (full reload) or a network drop mid-batch. Swallow it so
+    // the batch doesn't throw; the finally below rescues any in-flight lead.
+    console.warn("[analyzeLeads] stream interrupted:", err);
+  } finally {
+    // Revert every lead that didn't get a successful analysis (failed OR never
+    // returned because the stream was cut) from "analyzing" back to
+    // "pending_analysis", so a row is never left stuck mid-flight.
+    revertAnalyzingStatus(companyIds.filter((id) => !succeeded.includes(id)));
   }
   return { succeeded, failed };
 }
