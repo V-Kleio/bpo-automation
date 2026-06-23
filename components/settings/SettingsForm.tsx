@@ -209,7 +209,7 @@ export function SettingsForm() {
   if (loadError) {
     return (
       <Card>
-        <CardContent className="text-sm text-red-600">
+        <CardContent className="text-sm text-red-600 dark:text-red-400">
           Failed to load settings: {loadError}
         </CardContent>
       </Card>
@@ -217,14 +217,14 @@ export function SettingsForm() {
   }
   if (!view) {
     return (
-      <div className="flex items-center gap-2 text-sm text-zinc-500">
+      <div className="flex items-center gap-2 text-sm text-fg-muted">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading settings…
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       {GROUPS.map((group) => {
         const fields = fieldsByGroup.get(group.id) ?? [];
         const dirtyCount = fields.filter(isDirty).length;
@@ -245,7 +245,7 @@ export function SettingsForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               {group.id === "claude" && view.anthropic.mixedAuth && (
-                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <p className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800">
                   Both an API key and an OAuth token are set — the gateway
                   rejects mixed auth. Clear one of them.
                 </p>
@@ -288,7 +288,7 @@ export function SettingsForm() {
           </Card>
         );
       })}
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-fg-subtle">
         Saves write to <code>.env.local</code> and take effect immediately —
         no restart needed.
       </p>
@@ -315,7 +315,7 @@ function FieldRow({
 
   return (
     <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[220px_1fr] sm:items-start sm:gap-4">
-      <label className="pt-1.5 text-sm font-medium text-zinc-700">
+      <label className="pt-1.5 text-sm font-medium text-fg">
         {field.label}
       </label>
       <div className="min-w-0 space-y-1">
@@ -326,7 +326,7 @@ function FieldRow({
               onCheckedChange={(v) => onChange(v ? "1" : "0")}
               aria-label={field.label}
             />
-            <span className="text-sm text-zinc-600">
+            <span className="text-sm text-fg-muted">
               {effective === "1" ? "Enabled" : "Disabled"}
             </span>
           </div>
@@ -386,9 +386,9 @@ function FieldRow({
           />
         )}
         {error ? (
-          <p className="text-xs text-red-600">{error}</p>
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
         ) : field.help ? (
-          <p className="text-xs text-zinc-500">{field.help}</p>
+          <p className="text-xs text-fg-muted">{field.help}</p>
         ) : null}
       </div>
     </div>

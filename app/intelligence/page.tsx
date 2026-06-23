@@ -11,7 +11,7 @@ export default function IntelligencePage() {
         description="Claude analyzes the selected company, qualifies the lead, and drafts a per-stakeholder outreach sequence."
       />
       <div className="flex-1 min-h-0">
-        <Suspense fallback={<div className="p-6 text-sm text-zinc-500">Loading workbench…</div>}>
+        <Suspense fallback={<div className="p-6 text-sm text-fg-muted">Loading workbench…</div>}>
           <IntelligenceWorkbench />
         </Suspense>
       </div>

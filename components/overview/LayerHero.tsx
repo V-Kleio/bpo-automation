@@ -22,7 +22,7 @@ const LAYERS: Array<{
     href: "/leads",
     icon: Database,
     metric: "acquired",
-    ringClass: "border-teal-200 bg-teal-50",
+    ringClass: "border-teal-200 dark:border-teal-900 bg-teal-50 dark:bg-teal-950/40",
     iconClass: "bg-teal-600 text-white",
   },
   {
@@ -32,7 +32,7 @@ const LAYERS: Array<{
     href: "/intelligence",
     icon: Brain,
     metric: "analyzed",
-    ringClass: "border-blue-200 bg-blue-50",
+    ringClass: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40",
     iconClass: "bg-blue-600 text-white",
   },
   {
@@ -42,7 +42,7 @@ const LAYERS: Array<{
     href: "/campaigns",
     icon: Send,
     metric: "inCampaign",
-    ringClass: "border-green-200 bg-green-50",
+    ringClass: "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40",
     iconClass: "bg-green-600 text-white",
   },
   {
@@ -52,7 +52,7 @@ const LAYERS: Array<{
     href: "/crm",
     icon: Briefcase,
     metric: "meetingBooked",
-    ringClass: "border-violet-200 bg-violet-50",
+    ringClass: "border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/40",
     iconClass: "bg-violet-600 text-white",
   },
 ];
@@ -69,7 +69,7 @@ export function LayerHero() {
             key={l.layer}
             href={l.href}
             className={cn(
-              "group relative rounded-lg border bg-white p-4 shadow-sm transition-all hover:shadow-md",
+              "group relative rounded-lg border bg-surface p-4 shadow-sm transition-all hover:shadow-md",
               l.ringClass,
             )}
           >
@@ -82,24 +82,24 @@ export function LayerHero() {
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <span className="rounded border border-current/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-700/80">
+              <span className="rounded border border-current/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg/80">
                 Layer {l.layer}
               </span>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold tabular-nums text-zinc-900">
+              <div className="text-2xl font-bold tabular-nums text-fg">
                 {counts[l.metric]}
               </div>
-              <div className="text-[11px] text-zinc-600">{l.subline}</div>
+              <div className="text-[11px] text-fg-muted">{l.subline}</div>
             </div>
-            <div className="mt-2 text-sm font-semibold text-zinc-900">
+            <div className="mt-2 text-sm font-semibold text-fg">
               {l.title}
             </div>
             <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
-              <ArrowRight className="h-3.5 w-3.5 text-zinc-400" />
+              <ArrowRight className="h-3.5 w-3.5 text-fg-subtle" />
             </div>
             {i !== LAYERS.length - 1 && (
-              <div className="absolute -right-2 top-1/2 hidden h-px w-4 -translate-y-1/2 bg-zinc-300 lg:block" />
+              <div className="absolute -right-2 top-1/2 hidden h-px w-4 -translate-y-1/2 bg-border-strong lg:block" />
             )}
           </Link>
         );

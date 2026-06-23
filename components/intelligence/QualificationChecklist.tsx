@@ -50,25 +50,25 @@ export function QualificationChecklist({
         return (
           <div
             key={c.key}
-            className="rounded-lg border border-zinc-200 bg-white p-3"
+            className="rounded-lg border border-border bg-surface p-3"
           >
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-600">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-2 text-fg-muted">
                 <Icon className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-zinc-900">
+                    <div className="text-sm font-semibold text-fg">
                       {c.no}. {c.label}
                     </div>
-                    <div className="text-[11px] text-zinc-500">
+                    <div className="text-[11px] text-fg-muted">
                       {c.whatToLookFor}
                     </div>
                   </div>
-                  <div className="text-sm font-semibold tabular-nums text-zinc-900">
+                  <div className="text-sm font-semibold tabular-nums text-fg">
                     {dim.score}
-                    <span className="text-zinc-400">/10</span>
+                    <span className="text-fg-subtle">/10</span>
                   </div>
                 </div>
                 <Progress
@@ -76,7 +76,7 @@ export function QualificationChecklist({
                   className="mt-2"
                   barClassName={cn("transition-all", barColor(dim.score))}
                 />
-                <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                <p className="mt-2 text-xs leading-relaxed text-fg-muted">
                   {dim.reasoning}
                 </p>
               </div>

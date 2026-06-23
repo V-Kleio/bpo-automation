@@ -20,32 +20,32 @@ const CONFIG: Record<
 > = {
   queued: {
     label: "Queued",
-    classes: "border-zinc-200 bg-zinc-50 text-zinc-700",
+    classes: "border-border bg-surface-2 text-fg",
     icon: Clock,
   },
   connection_sent: {
     label: "Connection Sent",
-    classes: "border-blue-200 bg-blue-50 text-blue-700",
+    classes: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
     icon: LinkedinIcon,
   },
   email_sequence_active: {
     label: "Email Sequence",
-    classes: "border-indigo-200 bg-indigo-50 text-indigo-700",
+    classes: "border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300",
     icon: Mail,
   },
   replied: {
     label: "Replied",
-    classes: "border-amber-200 bg-amber-50 text-amber-700",
+    classes: "border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
     icon: MessageSquareReply,
   },
   meeting_booked: {
     label: "Meeting Booked",
-    classes: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    classes: "border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
     icon: CalendarCheck,
   },
   disqualified: {
     label: "Disqualified",
-    classes: "border-zinc-200 bg-zinc-50 text-zinc-500",
+    classes: "border-border bg-surface-2 text-fg-muted",
     icon: Ban,
   },
 };

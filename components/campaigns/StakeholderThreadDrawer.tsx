@@ -79,14 +79,14 @@ export function StakeholderThreadDrawer({
             <TierBadge tier={company.tier} />
             <StageBadge stage={campaign.stage} />
             {company.analysis && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
                 Score {company.analysis.priorityScore}
               </span>
             )}
           </div>
 
           <div>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Outreach Sequence
             </h3>
             <ol className="space-y-3">
@@ -105,7 +105,7 @@ export function StakeholderThreadDrawer({
                 return (
                   <li key={step} className="relative">
                     {step !== 4 && (
-                      <div className="absolute left-3 top-7 bottom-[-12px] w-px bg-zinc-200" />
+                      <div className="absolute left-3 top-7 bottom-[-12px] w-px bg-surface-2" />
                     )}
                     <div className="flex items-start gap-3">
                       <StepDot
@@ -115,18 +115,18 @@ export function StakeholderThreadDrawer({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <div>
-                            <div className="text-sm font-semibold text-zinc-900">
+                            <div className="text-sm font-semibold text-fg">
                               Step {step} · {ROLE_LABEL[role]}
                             </div>
                             {stakeholder ? (
-                              <div className="mt-0.5 text-xs text-zinc-600">
-                                <span className="font-medium text-zinc-800">
+                              <div className="mt-0.5 text-xs text-fg-muted">
+                                <span className="font-medium text-fg">
                                   {stakeholder.name}
                                 </span>{" "}
                                 — {stakeholder.title}
                               </div>
                             ) : (
-                              <div className="text-xs text-zinc-400 italic">
+                              <div className="text-xs text-fg-subtle italic">
                                 No stakeholder mapped
                               </div>
                             )}
@@ -175,8 +175,8 @@ export function StakeholderThreadDrawer({
             </ol>
           </div>
 
-          <div className="border-t border-zinc-200 pt-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="border-t border-border pt-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Campaign actions
             </h3>
             <CampaignTerminalActions company={company} campaign={campaign} />
@@ -197,13 +197,13 @@ function StepDot({ passed, active }: { passed: boolean; active: boolean }) {
   }
   if (active) {
     return (
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-white text-blue-600">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-surface text-blue-600 dark:text-blue-400">
         <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
       </div>
     );
   }
   return (
-    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-zinc-300 bg-white text-zinc-400">
+    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-border-strong bg-surface text-fg-subtle">
       <Circle className="h-2 w-2 fill-current" />
     </div>
   );
@@ -220,24 +220,24 @@ function StepStatus({
 }) {
   if (replied)
     return (
-      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
         Replied
       </span>
     );
   if (sentAny)
     return (
-      <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
+      <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">
         In flight
       </span>
     );
   if (active)
     return (
-      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
         Active
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
       Pending
     </span>
   );
@@ -270,15 +270,15 @@ function ChannelSection({
         : "Not connected";
   const badgeTone =
     channel === "linkedin" && live
-      ? "bg-emerald-50 text-emerald-700"
-      : "bg-zinc-100 text-zinc-500";
+      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+      : "bg-surface-2 text-fg-muted";
   return (
     <div className="mt-2.5">
-      <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
         <span className="inline-flex items-center gap-1">
           <Icon className="h-3 w-3" />
           {channel === "linkedin" ? "LinkedIn" : "Email"}
-          <span className="text-zinc-400 normal-case font-normal">
+          <span className="text-fg-subtle normal-case font-normal">
             · {tps.length}
           </span>
         </span>
@@ -315,32 +315,32 @@ function TouchpointRow({
       className={cn(
         "flex items-start gap-2 rounded-md border px-2.5 py-2 text-xs",
         isReply
-          ? "border-emerald-200 bg-emerald-50/40"
-          : "border-zinc-200 bg-white",
+          ? "border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/40"
+          : "border-border bg-surface",
       )}
     >
-      <div className="mt-0.5 shrink-0 text-zinc-500">
+      <div className="mt-0.5 shrink-0 text-fg-muted">
         {isReply ? (
-          <CornerDownRight className="h-3.5 w-3.5 text-emerald-600" />
+          <CornerDownRight className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
         ) : tp.channel === "linkedin" ? (
-          <LinkedinIcon className="h-3.5 w-3.5 text-blue-600" />
+          <LinkedinIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
         ) : tp.channel === "email" ? (
-          <Mail className="h-3.5 w-3.5 text-indigo-600" />
+          <Mail className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
         ) : (
           <Send className="h-3.5 w-3.5" />
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-zinc-800">
+        <div className="text-fg">
           {tp.messagePreview}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-zinc-500">
+        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-fg-muted">
           <span>{formatRelative(tp.sentAt, now)}</span>
           {stakeholder && <span>· {stakeholder.name}</span>}
         </div>
       </div>
       {isReply && (
-        <MessageSquareReply className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+        <MessageSquareReply className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
     </li>
   );

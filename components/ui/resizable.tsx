@@ -163,7 +163,7 @@ export function ResizableColumns({
                   document.body.style.cursor = "col-resize";
                   document.body.style.userSelect = "none";
                 }}
-                className="group relative z-10 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-zinc-200 transition-colors hover:bg-blue-400 active:bg-blue-500"
+                className="group relative z-10 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-surface-2 transition-colors hover:bg-blue-400 active:bg-blue-500"
                 title="Drag to resize"
               >
                 {/* Wider invisible hit area for easier grabbing */}

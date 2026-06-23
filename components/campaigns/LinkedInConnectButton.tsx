@@ -134,15 +134,15 @@ export function LinkedInConnectButton() {
 
   if (status.authenticated) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800">
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1.5 text-xs text-emerald-800">
         <CheckCircle2 className="h-3.5 w-3.5" />
         <span className="font-semibold">LinkedIn · Live</span>
-        <span className="text-emerald-600">
+        <span className="text-emerald-600 dark:text-emerald-400">
           {status.dailyUsage}/{status.dailyCap} today
         </span>
         <button
           onClick={disconnect}
-          className="ml-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-emerald-700 hover:bg-emerald-100"
+          className="ml-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:bg-emerald-900/40"
           title="Disconnect LinkedIn"
         >
           <RotateCcw className="h-3 w-3" />

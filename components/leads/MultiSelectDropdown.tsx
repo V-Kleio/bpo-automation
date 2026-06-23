@@ -64,8 +64,8 @@ export function MultiSelectDropdown<T extends string>({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900",
-          active && "border-blue-400 bg-blue-50 text-blue-900 hover:bg-blue-100",
+          "inline-flex h-9 items-center gap-1.5 rounded-md border border-border-strong bg-surface px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg",
+          active && "border-blue-400 bg-blue-50 dark:bg-blue-950/40 text-blue-900 hover:bg-blue-100 dark:bg-blue-900/40",
         )}
       >
         {icon}
@@ -77,7 +77,7 @@ export function MultiSelectDropdown<T extends string>({
         )}
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-zinc-400 transition-transform",
+            "h-4 w-4 text-fg-subtle transition-transform",
             open && "rotate-180",
           )}
         />
@@ -85,7 +85,7 @@ export function MultiSelectDropdown<T extends string>({
       {open && (
         <div
           className={cn(
-            "absolute top-full z-30 mt-1 min-w-[14rem] rounded-md border border-zinc-200 bg-white p-1 shadow-lg",
+            "absolute top-full z-30 mt-1 min-w-[14rem] rounded-md border border-border bg-surface p-1 shadow-lg",
             align === "right" ? "right-0" : "left-0",
           )}
         >
@@ -96,12 +96,12 @@ export function MultiSelectDropdown<T extends string>({
                 key={opt.value}
                 type="button"
                 onClick={() => toggle(opt.value)}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-zinc-800 hover:bg-zinc-100"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-fg hover:bg-surface-2"
               >
                 <span
                   className={cn(
-                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-zinc-300 bg-white text-white",
-                    checked && "border-zinc-900 bg-zinc-900",
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border-strong bg-surface text-primary-fg",
+                    checked && "border-primary bg-primary",
                   )}
                 >
                   {checked && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -113,11 +113,11 @@ export function MultiSelectDropdown<T extends string>({
           })}
           {active && (
             <>
-              <div className="my-1 border-t border-zinc-100" />
+              <div className="my-1 border-t border-border" />
               <button
                 type="button"
                 onClick={clear}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-zinc-500 hover:bg-zinc-100"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-fg-muted hover:bg-surface-2"
               >
                 <X className="h-3 w-3" />
                 Clear

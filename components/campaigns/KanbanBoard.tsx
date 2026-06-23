@@ -25,17 +25,17 @@ export function KanbanBoard() {
   if (campaigns.length === 0) {
     return (
       <>
-        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center">
-          <h3 className="text-base font-semibold text-zinc-900">
+        <div className="rounded-lg border border-dashed border-border-strong bg-surface p-12 text-center">
+          <h3 className="text-base font-semibold text-fg">
             No active campaigns
           </h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+          <p className="mx-auto mt-2 max-w-md text-sm text-fg-muted">
             Push a qualified company from the AI Intelligence workbench to
             create a campaign card here.
           </p>
           <a
             href="/intelligence"
-            className="mt-4 inline-flex items-center gap-1 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-4 inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-fg hover:opacity-90"
           >
             Go to AI Intelligence
           </a>
@@ -58,17 +58,17 @@ export function KanbanBoard() {
               <div key={stage} className="w-72 shrink-0">
                 <div className="mb-2 flex items-center justify-between">
                   <StageBadge stage={stage} />
-                  <span className="text-[11px] font-medium text-zinc-500">
+                  <span className="text-[11px] font-medium text-fg-muted">
                     {items.length}
                   </span>
                 </div>
                 <div
                   className={
-                    "min-h-[160px] rounded-lg border border-zinc-200 bg-zinc-50/60 p-2 space-y-2"
+                    "min-h-[160px] rounded-lg border border-border bg-surface-2/60 p-2 space-y-2"
                   }
                 >
                   {items.length === 0 && (
-                    <div className="rounded-md border border-dashed border-zinc-200 bg-white/40 px-3 py-6 text-center text-[11px] text-zinc-400">
+                    <div className="rounded-md border border-dashed border-border bg-surface/40 px-3 py-6 text-center text-[11px] text-fg-subtle">
                       Empty
                     </div>
                   )}

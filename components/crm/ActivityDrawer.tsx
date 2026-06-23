@@ -71,7 +71,7 @@ export function ActivityDrawer({
             <Stat label="Assigned AE" value={deal.assignedAE ?? "—"} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-fg-muted">
             <TierBadge tier={company.tier} />
             {deal.notifiedAt && (
               <Badge variant="success">
@@ -81,7 +81,7 @@ export function ActivityDrawer({
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Add Note
             </div>
             <div className="flex items-start gap-2">
@@ -105,11 +105,11 @@ export function ActivityDrawer({
           </div>
 
           <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Activity Feed
             </div>
             {deal.activities.length === 0 ? (
-              <div className="rounded-md border border-dashed border-zinc-200 bg-white p-4 text-center text-xs text-zinc-500">
+              <div className="rounded-md border border-dashed border-border bg-surface p-4 text-center text-xs text-fg-muted">
                 No activity yet.
               </div>
             ) : (
@@ -120,15 +120,15 @@ export function ActivityDrawer({
                     <li
                       key={a.id}
                       className={cn(
-                        "flex items-start gap-2 rounded-md border bg-white px-3 py-2 text-xs",
-                        a.type === "reply" && "border-emerald-200 bg-emerald-50/40",
-                        a.type === "stage_change" && "border-blue-200 bg-blue-50/40",
+                        "flex items-start gap-2 rounded-md border bg-surface px-3 py-2 text-xs",
+                        a.type === "reply" && "border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/40",
+                        a.type === "stage_change" && "border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/40",
                       )}
                     >
-                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fg-muted" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-zinc-800">{a.summary}</div>
-                        <div className="mt-0.5 text-[10px] text-zinc-500">
+                        <div className="text-fg">{a.summary}</div>
+                        <div className="mt-0.5 text-[10px] text-fg-muted">
                           {formatRelative(a.at, now)} ·{" "}
                           {a.type.replace("_", " ")}
                         </div>
@@ -147,11 +147,11 @@ export function ActivityDrawer({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="rounded-md border border-border bg-surface px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
         {label}
       </div>
-      <div className="mt-0.5 truncate text-sm font-semibold text-zinc-900">
+      <div className="mt-0.5 truncate text-sm font-semibold text-fg">
         {value}
       </div>
     </div>

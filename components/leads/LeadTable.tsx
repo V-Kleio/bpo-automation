@@ -274,10 +274,10 @@ export function LeadTable() {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
             <Input
               value={search}
               onChange={(e) => applySearch(e.target.value)}
@@ -293,12 +293,12 @@ export function LeadTable() {
               {
                 value: "linkedin",
                 label: "Has LinkedIn",
-                icon: <LinkedinIcon className="h-3.5 w-3.5 text-blue-600" />,
+                icon: <LinkedinIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />,
               },
               {
                 value: "email",
                 label: "Has Email",
-                icon: <Mail className="h-3.5 w-3.5 text-zinc-600" />,
+                icon: <Mail className="h-3.5 w-3.5 text-fg-muted" />,
               },
             ]}
           />
@@ -326,7 +326,7 @@ export function LeadTable() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-fg-muted">
             {selected.size > 0 ? `${selected.size} selected · ` : ""}
             {filtered.length} of {companies.length} leads
           </span>
@@ -348,10 +348,10 @@ export function LeadTable() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50/50 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-border bg-surface-2/50 text-left text-xs font-semibold uppercase tracking-wider text-fg-muted">
               <th className="w-10 px-3 py-2.5">
                 <Checkbox
                   checked={
@@ -378,7 +378,7 @@ export function LeadTable() {
               <tr>
                 <td
                   colSpan={8}
-                  className="px-3 py-12 text-center text-sm text-zinc-500"
+                  className="px-3 py-12 text-center text-sm text-fg-muted"
                 >
                   {companies.length === 0
                     ? "No leads yet — import a CSV/XLSX or sync from HubSpot to get started."
@@ -397,8 +397,8 @@ export function LeadTable() {
                   key={c.id}
                   onClick={() => setOpenDrawerId(c.id)}
                   className={cn(
-                    "border-b border-zinc-100 text-sm transition-colors hover:bg-zinc-50 cursor-pointer",
-                    isSelected && "bg-blue-50/40 hover:bg-blue-50/60",
+                    "border-b border-border text-sm transition-colors hover:bg-surface-2 cursor-pointer",
+                    isSelected && "bg-blue-50/40 dark:bg-blue-950/40 hover:bg-blue-50/60 dark:bg-blue-950/40",
                     c.status === "analyzing" && "animate-pulse",
                   )}
                 >
@@ -412,27 +412,27 @@ export function LeadTable() {
                     />
                   </td>
                   <td className="px-3 py-3">
-                    <div className="font-medium text-zinc-900">{c.name}</div>
-                    <div className="text-xs text-zinc-500">{c.hq}</div>
+                    <div className="font-medium text-fg">{c.name}</div>
+                    <div className="text-xs text-fg-muted">{c.hq}</div>
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex flex-wrap gap-1">
                       {c.industry.slice(0, 2).map((i) => (
                         <span
                           key={i}
-                          className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-700"
+                          className="inline-block rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-fg"
                         >
                           {i}
                         </span>
                       ))}
                       {c.industry.length > 2 && (
-                        <span className="text-[11px] text-zinc-500">
+                        <span className="text-[11px] text-fg-muted">
                           +{c.industry.length - 2}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-600">
+                  <td className="px-3 py-3 text-xs text-fg-muted">
                     {c.headcount.toLocaleString()} emp
                   </td>
                   <td className="px-3 py-3">
@@ -442,17 +442,17 @@ export function LeadTable() {
                     <div className="flex items-center gap-1.5">
                       {channels.linkedin && (
                         <LinkedinIcon
-                          className="h-3.5 w-3.5 text-blue-600"
+                          className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
                         />
                       )}
                       {channels.email && (
                         <Mail
-                          className="h-3.5 w-3.5 text-zinc-600"
+                          className="h-3.5 w-3.5 text-fg-muted"
                           aria-label="Has Email"
                         />
                       )}
                       {!channels.linkedin && !channels.email && (
-                        <span className="text-[11px] text-zinc-400">—</span>
+                        <span className="text-[11px] text-fg-subtle">—</span>
                       )}
                     </div>
                   </td>
@@ -463,7 +463,7 @@ export function LeadTable() {
                     <div className="flex items-center gap-2">
                       <StatusPill status={c.status} />
                       {c.analysis && (
-                        <span className="text-[11px] font-semibold text-blue-700">
+                        <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">
                           {c.analysis.priorityScore}
                         </span>
                       )}
@@ -476,12 +476,12 @@ export function LeadTable() {
         </table>
 
         {/* Pagination footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/50 px-3 py-2">
-          <div className="flex items-center gap-3 text-xs text-zinc-600">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-2/50 px-3 py-2">
+          <div className="flex items-center gap-3 text-xs text-fg-muted">
             <span className="tabular-nums">
               Showing {showingFrom}–{showingTo} of {filtered.length}
             </span>
-            <span className="text-zinc-300">·</span>
+            <span className="text-fg-subtle">·</span>
             <label className="flex items-center gap-1.5">
               <span>Rows per page</span>
               <Select
@@ -513,7 +513,7 @@ export function LeadTable() {
               <ChevronLeft className="h-4 w-4" />
               Prev
             </Button>
-            <span className="flex items-center gap-1.5 px-2 text-xs tabular-nums text-zinc-700">
+            <span className="flex items-center gap-1.5 px-2 text-xs tabular-nums text-fg">
               Page
               <Input
                 type="number"
@@ -580,8 +580,8 @@ function SortHeader({
         type="button"
         onClick={() => onSort(sortKey)}
         className={cn(
-          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-zinc-200/60",
-          active ? "text-zinc-900" : "text-zinc-500",
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-surface-2/60",
+          active ? "text-fg" : "text-fg-muted",
         )}
         title={`Sort by ${label}`}
       >

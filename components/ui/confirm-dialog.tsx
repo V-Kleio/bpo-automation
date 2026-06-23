@@ -64,27 +64,27 @@ export function useConfirm(): [
 
   const dialog = state ? (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={() => close(false)}
     >
       <div
         role="alertdialog"
         aria-modal="true"
-        className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-xl"
+        className="w-full max-w-sm rounded-lg border border-border bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
           {state.destructive && (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
               <AlertTriangle className="h-4.5 w-4.5" />
             </div>
           )}
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-zinc-900">
+            <h2 className="text-sm font-semibold text-fg">
               {state.title}
             </h2>
             {state.description && (
-              <div className="mt-1 text-xs leading-relaxed text-zinc-600">
+              <div className="mt-1 text-xs leading-relaxed text-fg-muted">
                 {state.description}
               </div>
             )}

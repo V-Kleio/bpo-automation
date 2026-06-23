@@ -16,13 +16,13 @@ export function Progress({
     <div className={cn("w-full", className)}>
       <div
         className={cn(
-          "relative h-2 w-full overflow-hidden rounded-full bg-zinc-100",
+          "relative h-2 w-full overflow-hidden rounded-full bg-surface-2",
           trackClassName,
         )}
       >
         <div
           className={cn(
-            "h-full rounded-full bg-zinc-900 transition-[width] duration-500",
+            "h-full rounded-full bg-primary transition-[width] duration-500",
             barClassName,
           )}
           style={{ width: `${v}%` }}

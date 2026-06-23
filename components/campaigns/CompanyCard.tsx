@@ -46,14 +46,14 @@ export function CompanyCard({
   return (
     <button
       onClick={onOpen}
-      className="group block w-full rounded-lg border border-zinc-200 bg-white p-3 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow"
+      className="group block w-full rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition-all hover:border-border-strong hover:shadow"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-zinc-900">
+          <div className="truncate text-sm font-semibold text-fg">
             {company.name}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-zinc-500">
+          <div className="mt-0.5 truncate text-[11px] text-fg-muted">
             {company.industry[0]} · {company.hq}
           </div>
         </div>
@@ -62,10 +62,10 @@ export function CompanyCard({
 
       {/* Step progress */}
       <div className="mt-3">
-        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
           <span>
             Step {campaign.activeStep}/4 ·{" "}
-            <span className="text-zinc-700 normal-case font-medium">
+            <span className="text-fg normal-case font-medium">
               {ROLE_LABEL[STEP_TO_ROLE[campaign.activeStep]]}
             </span>
           </span>
@@ -83,7 +83,7 @@ export function CompanyCard({
                     ? "bg-emerald-500"
                     : active
                     ? "bg-blue-500"
-                    : "bg-zinc-200")
+                    : "bg-surface-2")
                 }
               />
             );
@@ -93,8 +93,8 @@ export function CompanyCard({
 
       {/* Active stakeholder */}
       {stakeholder && (
-        <div className="mt-3 flex items-center gap-2 rounded-md bg-zinc-50 px-2 py-1.5">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[9px] font-semibold text-white">
+        <div className="mt-3 flex items-center gap-2 rounded-md bg-surface-2 px-2 py-1.5">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-fg">
             {stakeholder.name
               .split(" ")
               .filter(Boolean)
@@ -104,10 +104,10 @@ export function CompanyCard({
               .toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[11px] font-semibold text-zinc-900">
+            <div className="truncate text-[11px] font-semibold text-fg">
               {stakeholder.name}
             </div>
-            <div className="truncate text-[10px] text-zinc-500">
+            <div className="truncate text-[10px] text-fg-muted">
               {stakeholder.title}
             </div>
           </div>
@@ -115,7 +115,7 @@ export function CompanyCard({
       )}
 
       {/* Footer */}
-      <div className="mt-2.5 flex items-center justify-between gap-2 text-[10px] text-zinc-500">
+      <div className="mt-2.5 flex items-center justify-between gap-2 text-[10px] text-fg-muted">
         <span className="inline-flex items-center gap-1">
           <Clock className="h-2.5 w-2.5" />
           {lastTp
@@ -129,7 +129,7 @@ export function CompanyCard({
             <span
               className={
                 "inline-flex items-center gap-0.5 " +
-                (linkedinCount > 0 ? "text-blue-700" : "text-zinc-400")
+                (linkedinCount > 0 ? "text-blue-700 dark:text-blue-300" : "text-fg-subtle")
               }
             >
               <LinkedinIcon className="h-2.5 w-2.5" />
@@ -140,7 +140,7 @@ export function CompanyCard({
             <span
               className={
                 "inline-flex items-center gap-0.5 " +
-                (emailCount > 0 ? "text-indigo-700" : "text-zinc-400")
+                (emailCount > 0 ? "text-indigo-700 dark:text-indigo-300" : "text-fg-subtle")
               }
             >
               <Mail className="h-2.5 w-2.5" />

@@ -3,19 +3,19 @@ import { cn } from "@/lib/utils";
 const LAYER_BADGE: Record<number, { label: string; classes: string }> = {
   1: {
     label: "Layer 1 · Smart Data Acquisition",
-    classes: "border-teal-200 bg-teal-50 text-teal-700",
+    classes: "border-teal-200 dark:border-teal-900 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300",
   },
   2: {
     label: "Layer 2 · Centralized AI Intelligence",
-    classes: "border-blue-200 bg-blue-50 text-blue-700",
+    classes: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
   },
   3: {
     label: "Layer 3 · Automated Engagement",
-    classes: "border-green-200 bg-green-50 text-green-700",
+    classes: "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300",
   },
   4: {
     label: "Layer 4 · CRM Tracking",
-    classes: "border-violet-200 bg-violet-50 text-violet-700",
+    classes: "border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300",
   },
 };
 
@@ -31,7 +31,7 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-zinc-200 bg-white px-6 py-5">
+    <div className="border-b border-border bg-surface px-6 py-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           {layer != null && (
@@ -44,11 +44,11 @@ export function PageHeader({
               {LAYER_BADGE[layer].label}
             </div>
           )}
-          <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-fg tracking-tight">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 max-w-3xl text-sm text-zinc-500">{description}</p>
+            <p className="mt-1 max-w-3xl text-sm text-fg-muted">{description}</p>
           )}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}

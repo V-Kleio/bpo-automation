@@ -23,12 +23,12 @@ const STAGE_ORDER: DealStage[] = [
 ];
 
 const STAGE_TONE: Record<DealStage, string> = {
-  new: "border-zinc-300 bg-zinc-50",
-  engaged: "border-blue-300 bg-blue-50",
-  qualified_opportunity: "border-indigo-300 bg-indigo-50",
-  meeting_scheduled: "border-emerald-300 bg-emerald-50",
-  closed_won: "border-emerald-400 bg-emerald-100",
-  closed_lost: "border-zinc-300 bg-zinc-100",
+  new: "border-border-strong bg-surface-2",
+  engaged: "border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40",
+  qualified_opportunity: "border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40",
+  meeting_scheduled: "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40",
+  closed_won: "border-emerald-400 bg-emerald-100 dark:bg-emerald-900/40",
+  closed_lost: "border-border-strong bg-surface-2",
 };
 
 export function DealPipeline() {
@@ -65,7 +65,7 @@ export function DealPipeline() {
 
   if (deals.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center text-sm text-zinc-500">
+      <div className="rounded-lg border border-dashed border-border-strong bg-surface p-12 text-center text-sm text-fg-muted">
         No deals yet. Push a qualified company through the campaign and Layer 4
         will sync them here automatically.
       </div>
@@ -75,8 +75,8 @@ export function DealPipeline() {
   return (
     <>
       <div className="mb-3 flex items-center justify-end gap-2">
-        <label className="flex items-center gap-1.5 text-xs text-zinc-600">
-          <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400" />
+        <label className="flex items-center gap-1.5 text-xs text-fg-muted">
+          <ArrowUpDown className="h-3.5 w-3.5 text-fg-subtle" />
           Sort cards by
           <Select
             value={sort}
@@ -103,20 +103,20 @@ export function DealPipeline() {
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-zinc-900">
+                    <div className="text-xs font-semibold text-fg">
                       {DEAL_STAGE_LABEL[stage]}
                     </div>
                     <Badge variant="outline" className="text-[10px]">
                       {items.length}
                     </Badge>
                   </div>
-                  <div className="mt-0.5 text-[11px] text-zinc-600">
+                  <div className="mt-0.5 text-[11px] text-fg-muted">
                     ${(total / 1000).toFixed(0)}k pipeline
                   </div>
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 && (
-                    <div className="rounded-md border border-dashed border-zinc-200 bg-white/40 px-3 py-4 text-center text-[11px] text-zinc-400">
+                    <div className="rounded-md border border-dashed border-border bg-surface/40 px-3 py-4 text-center text-[11px] text-fg-subtle">
                       —
                     </div>
                   )}
@@ -166,32 +166,32 @@ function DealCard({
   return (
     <button
       onClick={onOpen}
-      className="block w-full rounded-md border border-zinc-200 bg-white p-3 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow"
+      className="block w-full rounded-md border border-border bg-surface p-3 text-left shadow-sm transition-all hover:border-border-strong hover:shadow"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-zinc-900">
+          <div className="truncate text-sm font-semibold text-fg">
             {company.name}
           </div>
-          <div className="mt-0.5 truncate text-[10px] text-zinc-500">
+          <div className="mt-0.5 truncate text-[10px] text-fg-muted">
             {company.industry[0]}
           </div>
         </div>
         <TierBadge tier={company.tier} />
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px]">
-        <span className="inline-flex items-center gap-1 font-semibold text-zinc-900">
-          <CircleDollarSign className="h-3 w-3 text-zinc-500" />
+        <span className="inline-flex items-center gap-1 font-semibold text-fg">
+          <CircleDollarSign className="h-3 w-3 text-fg-muted" />
           {amount ? `$${(amount / 1000).toFixed(0)}k` : "—"}
         </span>
         {assignedAE && (
-          <span className="inline-flex items-center gap-1 text-zinc-500">
+          <span className="inline-flex items-center gap-1 text-fg-muted">
             <User className="h-3 w-3" />
             {assignedAE.split(" ")[0]}
           </span>
         )}
       </div>
-      <div className="mt-1 text-[10px] text-zinc-500">
+      <div className="mt-1 text-[10px] text-fg-muted">
         {lastActivityAt ? `Last activity ${formatRelative(lastActivityAt, now)}` : "No activity"}
       </div>
     </button>

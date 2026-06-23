@@ -9,22 +9,22 @@ const CONFIG: Record<
   pending_analysis: {
     label: "Pending",
     icon: Clock,
-    classes: "border-zinc-200 bg-zinc-50 text-zinc-600",
+    classes: "border-border bg-surface-2 text-fg-muted",
   },
   analyzing: {
     label: "Analyzing…",
     icon: Loader2,
-    classes: "border-blue-200 bg-blue-50 text-blue-700",
+    classes: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
   },
   qualified: {
     label: "Qualified",
     icon: Check,
-    classes: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    classes: "border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
   },
   disqualified: {
     label: "Disqualified",
     icon: X,
-    classes: "border-zinc-200 bg-zinc-50 text-zinc-500",
+    classes: "border-border bg-surface-2 text-fg-muted",
   },
 };
 

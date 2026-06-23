@@ -7,14 +7,14 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-zinc-200 bg-zinc-100 text-zinc-700",
-        outline: "border-zinc-300 bg-transparent text-zinc-700",
-        accent: "border-blue-200 bg-blue-50 text-blue-700",
-        success: "border-green-200 bg-green-50 text-green-700",
-        warning: "border-amber-200 bg-amber-50 text-amber-700",
-        danger: "border-red-200 bg-red-50 text-red-700",
-        info: "border-cyan-200 bg-cyan-50 text-cyan-700",
-        purple: "border-violet-200 bg-violet-50 text-violet-700",
+        default: "border-border bg-surface-2 text-fg",
+        outline: "border-border-strong bg-transparent text-fg",
+        accent: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
+        success: "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300",
+        warning: "border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
+        danger: "border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300",
+        info: "border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300",
+        purple: "border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300",
       },
     },
     defaultVariants: { variant: "default" },

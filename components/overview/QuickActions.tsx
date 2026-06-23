@@ -15,7 +15,7 @@ export function QuickActions() {
       title: "Open Lead Database",
       sub: "Review 20 seeded Indonesian BPO targets",
       icon: Database,
-      iconClass: "bg-teal-100 text-teal-700",
+      iconClass: "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300",
     },
     {
       href: "/intelligence",
@@ -25,7 +25,7 @@ export function QuickActions() {
           ? `${analyzed} companies analyzed so far`
           : "Send your first batch through Claude",
       icon: Brain,
-      iconClass: "bg-blue-100 text-blue-700",
+      iconClass: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
     },
     {
       href: "/campaigns",
@@ -35,7 +35,7 @@ export function QuickActions() {
           ? `${inCampaign} active campaign${inCampaign === 1 ? "" : "s"}`
           : "Push a qualified lead to start outreach",
       icon: Send,
-      iconClass: "bg-green-100 text-green-700",
+      iconClass: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
     },
   ];
 
@@ -47,7 +47,7 @@ export function QuickActions() {
           <Link
             key={a.href}
             href={a.href}
-            className="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+            className="rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong hover:bg-surface-2"
           >
             <div className="flex items-center gap-3">
               <div
@@ -59,10 +59,10 @@ export function QuickActions() {
                 <Icon className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-zinc-900">
+                <div className="text-sm font-semibold text-fg">
                   {a.title}
                 </div>
-                <div className="text-xs text-zinc-500">{a.sub}</div>
+                <div className="text-xs text-fg-muted">{a.sub}</div>
               </div>
             </div>
           </Link>

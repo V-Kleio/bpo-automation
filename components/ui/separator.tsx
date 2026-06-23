@@ -11,7 +11,7 @@ export function Separator({
     <div
       role="separator"
       className={cn(
-        "bg-zinc-200",
+        "bg-surface-2",
         orientation === "horizontal" ? "h-px w-full" : "w-px h-full",
         className,
       )}

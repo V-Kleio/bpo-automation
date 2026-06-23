@@ -92,7 +92,7 @@ export function IntelligenceWorkbench() {
             size: 260,
             ...RAIL,
             content: (
-              <aside className="h-full overflow-y-auto bg-zinc-50/50">
+              <aside className="h-full overflow-y-auto bg-surface-2/50">
                 <AnalyzedRail selectedId={selectedId} onSelect={setSelectedId} />
               </aside>
             ),
@@ -101,22 +101,22 @@ export function IntelligenceWorkbench() {
             size: null,
             content: (
               <div className="flex h-full items-center justify-center p-12">
-                <div className="max-w-md rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center">
-                  <Sparkles className="mx-auto mb-3 h-6 w-6 text-zinc-400" />
-                  <h2 className="text-base font-semibold text-zinc-900">
+                <div className="max-w-md rounded-lg border border-dashed border-border-strong bg-surface p-8 text-center">
+                  <Sparkles className="mx-auto mb-3 h-6 w-6 text-fg-subtle" />
+                  <h2 className="text-base font-semibold text-fg">
                     No analyzed company selected
                   </h2>
-                  <p className="mt-2 text-sm text-zinc-500">
+                  <p className="mt-2 text-sm text-fg-muted">
                     Go to the Lead Database, select one or more companies, and
                     click
-                    <span className="mx-1 font-medium text-zinc-700">
+                    <span className="mx-1 font-medium text-fg">
                       Run AI Analysis
                     </span>
                     to populate this workbench.
                   </p>
                   <a
                     href="/leads"
-                    className="mt-4 inline-flex items-center gap-1 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
+                    className="mt-4 inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-fg hover:opacity-90"
                   >
                     Go to Leads
                   </a>
@@ -146,7 +146,7 @@ export function IntelligenceWorkbench() {
           size: 260,
           ...RAIL,
           content: (
-            <aside className="h-full overflow-y-auto bg-zinc-50/50">
+            <aside className="h-full overflow-y-auto bg-surface-2/50">
               <AnalyzedRail selectedId={selectedId} onSelect={setSelectedId} />
             </aside>
           ),
@@ -157,11 +157,11 @@ export function IntelligenceWorkbench() {
             <div className="h-full overflow-y-auto">
               <div className="px-6 py-6 space-y-6">
           {/* Header card */}
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
+          <div className="rounded-lg border border-border bg-surface p-5">
             <div className="flex items-start justify-between gap-5">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-zinc-900">
+                  <h2 className="text-lg font-bold text-fg">
                     {company.name}
                   </h2>
                   <TierBadge tier={company.tier} />
@@ -169,16 +169,16 @@ export function IntelligenceWorkbench() {
                     <Badge variant="success">In Campaign</Badge>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-zinc-600">
+                <p className="mt-1 text-sm text-fg-muted">
                   {company.industry.join(" · ")} · {company.headcount.toLocaleString()} employees · {company.hq}
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-700">
+                <p className="mt-3 text-sm leading-relaxed text-fg">
                   {company.whyTarget}
                 </p>
               </div>
               <ScoreGauge score={company.analysis.priorityScore} />
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
               <Button
                 variant={inCampaign ? "subtle" : "accent"}
                 size="md"
@@ -188,7 +188,7 @@ export function IntelligenceWorkbench() {
                 <Rocket className="h-4 w-4" />
                 {inCampaign ? "Already in Campaign" : "Push to Campaign"}
               </Button>
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-fg-muted">
                 Launches the 4-step stakeholder sequence in Layer 3.
               </span>
             </div>
@@ -257,10 +257,10 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-3 flex items-start gap-2">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-fg-subtle" />
       <div>
-        <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
-        <p className="text-xs text-zinc-500">{subline}</p>
+        <h3 className="text-sm font-semibold text-fg">{title}</h3>
+        <p className="text-xs text-fg-muted">{subline}</p>
       </div>
     </div>
   );

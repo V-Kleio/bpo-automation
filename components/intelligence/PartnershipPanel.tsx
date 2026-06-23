@@ -24,13 +24,13 @@ export function PartnershipPanel({
         return (
           <div
             key={f.key}
-            className="rounded-lg border border-zinc-200 bg-white p-3"
+            className="rounded-lg border border-border bg-surface p-3"
           >
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
-              <Icon className="h-3.5 w-3.5 text-zinc-500" />
+            <div className="flex items-center gap-2 text-xs font-semibold text-fg">
+              <Icon className="h-3.5 w-3.5 text-fg-muted" />
               {f.label}
             </div>
-            <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
+            <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
               {partnership[f.key]}
             </p>
           </div>

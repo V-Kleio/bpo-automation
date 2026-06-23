@@ -72,7 +72,7 @@ export function CampaignTerminalActions({
 
   if (terminal) {
     return (
-      <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+      <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-fg-muted">
         Campaign is in a terminal state. No further actions available.
       </div>
     );

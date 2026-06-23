@@ -19,7 +19,7 @@ export default function OverviewPage() {
           <LayerActivityPie />
         </div>
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900">
+          <h2 className="mb-2 text-sm font-semibold text-fg">
             Recent Activity
           </h2>
           <EventLogFeed limit={10} />

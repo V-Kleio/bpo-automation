@@ -59,7 +59,7 @@ export function LeadDetailDrawer({
                 href={company.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-0.5 text-xs font-medium text-fg hover:bg-surface-2"
               >
                 Website <ExternalLink className="h-3 w-3" />
               </a>
@@ -68,17 +68,17 @@ export function LeadDetailDrawer({
 
           {/* Why target */}
           <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Why Target
             </h3>
-            <p className="text-sm leading-relaxed text-zinc-700">
+            <p className="text-sm leading-relaxed text-fg">
               {company.whyTarget}
             </p>
           </section>
 
           {/* Intent signals */}
           <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Intent Signals
             </h3>
             <IntentSignalList signals={company.intentSignals} max={10} />
@@ -86,7 +86,7 @@ export function LeadDetailDrawer({
 
           {/* Stakeholders */}
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Decision Makers ({stakeholders.length})
             </h3>
             <ul className="space-y-2">
@@ -104,31 +104,31 @@ export function LeadDetailDrawer({
                 .map((st) => (
                   <li
                     key={st.id}
-                    className="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3"
+                    className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3"
                   >
                     <div
                       className={cn(
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                         st.priority === "high"
-                          ? "bg-zinc-900 text-white"
-                          : "bg-zinc-100 text-zinc-700",
+                          ? "bg-primary text-primary-fg"
+                          : "bg-surface-2 text-fg",
                       )}
                     >
                       {initials(st.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-zinc-900 truncate">
+                        <span className="text-sm font-semibold text-fg truncate">
                           {st.name}
                         </span>
                         <Badge variant={ROLE_BADGE_VARIANT[st.role]}>
                           {ROLE_LABEL[st.role]}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 text-xs text-zinc-600 line-clamp-2">
+                      <p className="mt-0.5 text-xs text-fg-muted line-clamp-2">
                         {st.title}
                       </p>
-                      <p className="mt-1 text-[11px] leading-snug text-zinc-500">
+                      <p className="mt-1 text-[11px] leading-snug text-fg-muted">
                         {st.whyTarget}
                       </p>
                       <div className="mt-2 flex items-center gap-2">
@@ -137,7 +137,7 @@ export function LeadDetailDrawer({
                             href={st.linkedinUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex h-6 items-center gap-1 rounded border border-zinc-200 px-1.5 text-[11px] font-medium text-zinc-700 hover:bg-zinc-50"
+                            className="inline-flex h-6 items-center gap-1 rounded border border-border px-1.5 text-[11px] font-medium text-fg hover:bg-surface-2"
                           >
                             <LinkedinIcon className="h-3 w-3" />
                             LinkedIn
@@ -146,7 +146,7 @@ export function LeadDetailDrawer({
                         {st.email && (
                           <a
                             href={`mailto:${st.email}`}
-                            className="inline-flex h-6 items-center gap-1 rounded border border-zinc-200 px-1.5 text-[11px] font-medium text-zinc-700 hover:bg-zinc-50"
+                            className="inline-flex h-6 items-center gap-1 rounded border border-border px-1.5 text-[11px] font-medium text-fg hover:bg-surface-2"
                           >
                             <Mail className="h-3 w-3" />
                             Email
@@ -160,7 +160,7 @@ export function LeadDetailDrawer({
           </section>
 
           {/* Actions */}
-          <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-zinc-200 bg-white px-6 py-4">
+          <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-surface px-6 py-4">
             {company.analysis ? (
               <Link href={`/intelligence?companyId=${company.id}`}>
                 <Button variant="primary" size="md" className="w-full">
@@ -169,7 +169,7 @@ export function LeadDetailDrawer({
                 </Button>
               </Link>
             ) : (
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-fg-muted">
                 Run AI analysis from the table to unlock the full intelligence report.
               </p>
             )}

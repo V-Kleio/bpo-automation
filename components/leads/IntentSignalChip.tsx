@@ -18,9 +18,9 @@ const ICON_FOR: Record<IntentSignalType, typeof Users> = {
 };
 
 const STRENGTH_CLASS = {
-  strong: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  moderate: "border-amber-200 bg-amber-50 text-amber-700",
-  weak: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  strong: "border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
+  moderate: "border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
+  weak: "border-border bg-surface-2 text-fg-muted",
 };
 
 export function IntentSignalChip({ signal }: { signal: IntentSignal }) {
@@ -50,7 +50,7 @@ export function IntentSignalList({
   max?: number;
 }) {
   if (signals.length === 0)
-    return <span className="text-xs text-zinc-400">—</span>;
+    return <span className="text-xs text-fg-subtle">—</span>;
   const visible = signals.slice(0, max);
   const hidden = signals.length - visible.length;
   return (
@@ -59,7 +59,7 @@ export function IntentSignalList({
         <IntentSignalChip key={i} signal={s} />
       ))}
       {hidden > 0 && (
-        <span className="text-[11px] text-zinc-500">+{hidden}</span>
+        <span className="text-[11px] text-fg-muted">+{hidden}</span>
       )}
     </div>
   );

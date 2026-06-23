@@ -34,7 +34,7 @@ export function ChannelTabs({
   onChange: (v: ChannelFilter) => void;
 }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-md bg-zinc-100 p-0.5">
+    <div className="inline-flex items-center gap-1 rounded-md bg-surface-2 p-0.5">
       {OPTIONS.map(({ value: v, label, Icon, disabled, hint }) => (
         <button
           key={v}
@@ -44,16 +44,16 @@ export function ChannelTabs({
           className={cn(
             "inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-colors",
             value === v
-              ? "bg-white text-zinc-900 shadow-sm"
+              ? "bg-surface text-fg shadow-sm"
               : disabled
-                ? "cursor-not-allowed text-zinc-400"
-                : "text-zinc-600 hover:text-zinc-900",
+                ? "cursor-not-allowed text-fg-subtle"
+                : "text-fg-muted hover:text-fg",
           )}
         >
           <Icon className="h-3.5 w-3.5" />
           {label}
           {hint && (
-            <span className="ml-0.5 rounded bg-zinc-200 px-1 py-px text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+            <span className="ml-0.5 rounded bg-surface-2 px-1 py-px text-[9px] font-medium uppercase tracking-wider text-fg-muted">
               soon
             </span>
           )}

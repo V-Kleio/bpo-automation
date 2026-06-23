@@ -19,7 +19,7 @@ import { ClientOnly } from "@/components/ui/client-only";
 
 function ChartSkeleton() {
   return (
-    <div className="h-full w-full rounded-md bg-zinc-100/60 animate-pulse" />
+    <div className="h-full w-full rounded-md bg-surface-2/60 animate-pulse" />
   );
 }
 
@@ -187,7 +187,7 @@ export function LayerActivityPie() {
       <CardContent>
         <div className="h-56">
           {total === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+            <div className="flex h-full items-center justify-center text-sm text-fg-muted">
               No activity yet.
             </div>
           ) : (

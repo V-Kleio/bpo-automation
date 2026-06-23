@@ -19,13 +19,13 @@ const TYPE_META: Record<
   LogEvent["type"],
   { label: string; icon: typeof Brain; classes: string }
 > = {
-  ai_call: { label: "AI", icon: Brain, classes: "text-blue-600 bg-blue-50 border-blue-200" },
-  channel_send: { label: "Send", icon: Send, classes: "text-indigo-600 bg-indigo-50 border-indigo-200" },
-  reply: { label: "Reply", icon: CornerDownRight, classes: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  crm_sync: { label: "CRM", icon: RefreshCw, classes: "text-violet-600 bg-violet-50 border-violet-200" },
-  notification: { label: "Alert", icon: Bell, classes: "text-amber-600 bg-amber-50 border-amber-200" },
-  stage_change: { label: "Stage", icon: ArrowRightLeft, classes: "text-zinc-700 bg-zinc-100 border-zinc-200" },
-  user_action: { label: "User", icon: User, classes: "text-zinc-700 bg-zinc-100 border-zinc-200" },
+  ai_call: { label: "AI", icon: Brain, classes: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900" },
+  channel_send: { label: "Send", icon: Send, classes: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900" },
+  reply: { label: "Reply", icon: CornerDownRight, classes: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900" },
+  crm_sync: { label: "CRM", icon: RefreshCw, classes: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900" },
+  notification: { label: "Alert", icon: Bell, classes: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900" },
+  stage_change: { label: "Stage", icon: ArrowRightLeft, classes: "text-fg bg-surface-2 border-border" },
+  user_action: { label: "User", icon: User, classes: "text-fg bg-surface-2 border-border" },
 };
 
 const LAYER_BADGE: Record<1 | 2 | 3 | 4, string> = {
@@ -36,10 +36,10 @@ const LAYER_BADGE: Record<1 | 2 | 3 | 4, string> = {
 };
 
 const LAYER_COLOR: Record<1 | 2 | 3 | 4, string> = {
-  1: "text-teal-700 bg-teal-50",
-  2: "text-blue-700 bg-blue-50",
-  3: "text-green-700 bg-green-50",
-  4: "text-violet-700 bg-violet-50",
+  1: "text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40",
+  2: "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40",
+  3: "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40",
+  4: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40",
 };
 
 export function EventLogFeed({ limit }: { limit?: number }) {
@@ -61,7 +61,7 @@ export function EventLogFeed({ limit }: { limit?: number }) {
   return (
     <div className="space-y-3">
       {!limit && (
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface p-2">
           <Select
             value={layerFilter}
             onChange={(e) => setLayerFilter(e.target.value)}
@@ -85,19 +85,19 @@ export function EventLogFeed({ limit }: { limit?: number }) {
             <option value="stage_change">Stage changes</option>
             <option value="user_action">User actions</option>
           </Select>
-          <span className="ml-auto text-xs text-zinc-500">
+          <span className="ml-auto text-xs text-fg-muted">
             {filtered.length} event{filtered.length === 1 ? "" : "s"}
           </span>
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-200 bg-white">
+      <div className="rounded-lg border border-border bg-surface">
         {shown.length === 0 ? (
-          <div className="p-8 text-center text-sm text-zinc-500">
+          <div className="p-8 text-center text-sm text-fg-muted">
             No events yet — run an analysis or send a LinkedIn message to fill this feed.
           </div>
         ) : (
-          <ul className="divide-y divide-zinc-100">
+          <ul className="divide-y divide-border">
             {shown.map((e) => {
               const meta = TYPE_META[e.type];
               const Icon = meta.icon;
@@ -123,10 +123,10 @@ export function EventLogFeed({ limit }: { limit?: number }) {
                     <Icon className="h-2.5 w-2.5" />
                     {meta.label}
                   </span>
-                  <span className="flex-1 leading-relaxed text-zinc-800">
+                  <span className="flex-1 leading-relaxed text-fg">
                     {e.summary}
                   </span>
-                  <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">
+                  <span className="shrink-0 text-[10px] tabular-nums text-fg-muted">
                     {formatRelative(e.at, now)}
                   </span>
                 </li>

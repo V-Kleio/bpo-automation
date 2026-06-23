@@ -45,7 +45,7 @@ export function Drawer({
       />
       <div
         className={cn(
-          "relative ml-auto h-full w-full bg-white shadow-xl flex flex-col",
+          "relative ml-auto h-full w-full bg-surface shadow-xl flex flex-col",
           width,
           side === "left" && "ml-0 mr-auto",
         )}
@@ -53,20 +53,20 @@ export function Drawer({
           animation: "slideIn 200ms ease-out",
         }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div className="min-w-0 flex-1">
             {title && (
-              <h2 className="text-lg font-semibold text-zinc-900 truncate">
+              <h2 className="text-lg font-semibold text-fg truncate">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="mt-1 text-sm text-zinc-500">{description}</p>
+              <p className="mt-1 text-sm text-fg-muted">{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+            className="rounded-md p-1.5 text-fg-muted hover:bg-surface-2 hover:text-fg"
             aria-label="Close"
           >
             <X className="h-5 w-5" />

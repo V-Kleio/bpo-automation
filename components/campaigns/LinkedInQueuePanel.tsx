@@ -348,23 +348,23 @@ export function LinkedInQueuePanel() {
     linkedinLive && snapshot != null && snapshot.remaining <= nearCapThreshold;
 
   return (
-    <div className="mb-3 flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+    <div className="mb-3 flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
       {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
             <Send className="h-3.5 w-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+            <div className="flex items-center gap-2 text-sm font-semibold text-fg">
               LinkedIn send queue
               {statusStale && (
-                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                <span className="rounded bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
                   status unavailable — retrying…
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-zinc-500">
+            <div className="text-[11px] text-fg-muted">
               {linkedinLive
                 ? candidates.length === 0 && totalInFlight === 0
                   ? "All active campaigns have connection requests sent."
@@ -379,8 +379,8 @@ export function LinkedInQueuePanel() {
               className={cn(
                 "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium",
                 snapshot!.remaining <= 0
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                  : "border-amber-200 bg-amber-50 text-amber-700",
+                  ? "border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300"
+                  : "border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
               )}
               title="LinkedIn daily send cap"
             >
@@ -433,7 +433,7 @@ export function LinkedInQueuePanel() {
       </div>
 
       {showPanel && snapshot && (
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-600">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-fg-muted">
           <Stat
             label="Queued"
             value={snapshot.pending}
@@ -451,7 +451,7 @@ export function LinkedInQueuePanel() {
             <Stat label="Failed" value={snapshot.failed} tone="rose" />
           )}
           {snapshot.nextAtIso && (
-            <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-zinc-600">
+            <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-fg-muted">
               <Clock className="h-3 w-3" />
               Next send {formatRelative(snapshot.nextAtIso)}
             </span>
@@ -478,10 +478,10 @@ function Stat({
   icon?: React.ReactNode;
 }) {
   const TONE: Record<typeof tone, string> = {
-    amber: "bg-amber-50 text-amber-700 border-amber-200",
-    blue: "bg-blue-50 text-blue-700 border-blue-200",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    rose: "bg-rose-50 text-rose-700 border-rose-200",
+    amber: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900",
+    blue: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900",
+    emerald: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
+    rose: "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900",
   };
   return (
     <span
@@ -501,8 +501,8 @@ function FailedItemsLog({ items }: { items: QueueItem[] }) {
   // explode if many invites fail in a row.
   const recent = items.slice(-5).reverse();
   return (
-    <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 p-2">
-      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-rose-700">
+    <div className="mt-2 rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 p-2">
+      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
         <AlertTriangle className="h-3 w-3" />
         Recent failures ({items.length})
       </div>
@@ -510,17 +510,17 @@ function FailedItemsLog({ items }: { items: QueueItem[] }) {
         {recent.map((item) => (
           <li
             key={item.id}
-            className="rounded border border-rose-200 bg-white px-2 py-1 text-[11px]"
+            className="rounded border border-rose-200 dark:border-rose-900 bg-surface px-2 py-1 text-[11px]"
           >
             <div className="font-medium text-rose-800">
               {item.firstName} · step {item.step} ·{" "}
               {item.kind === "connect" ? "connection request" : "DM"}
             </div>
-            <div className="mt-0.5 break-words text-rose-700">
+            <div className="mt-0.5 break-words text-rose-700 dark:text-rose-300">
               {item.error ?? "unknown error"}
             </div>
             {item.finishedAt && (
-              <div className="mt-0.5 text-[10px] text-rose-500">
+              <div className="mt-0.5 text-[10px] text-rose-500 dark:text-rose-400">
                 {formatRelative(item.finishedAt)}
               </div>
             )}

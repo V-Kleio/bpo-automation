@@ -24,7 +24,7 @@ export function Tooltip({
       {open && (
         <span
           className={cn(
-            "pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-zinc-900 px-2 py-1 text-xs text-white shadow",
+            "pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-primary px-2 py-1 text-xs text-primary-fg shadow",
             side === "top" && "bottom-full left-1/2 mb-1 -translate-x-1/2",
             side === "bottom" && "top-full left-1/2 mt-1 -translate-x-1/2",
             side === "left" && "right-full top-1/2 mr-1 -translate-y-1/2",

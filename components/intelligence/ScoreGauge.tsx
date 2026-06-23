@@ -17,12 +17,12 @@ export function ScoreGauge({
 
   const tone =
     v >= 80
-      ? { ring: "#16a34a", text: "text-emerald-700" }
+      ? { ring: "#16a34a", text: "text-emerald-700 dark:text-emerald-300" }
       : v >= 65
-      ? { ring: "#2563eb", text: "text-blue-700" }
+      ? { ring: "#2563eb", text: "text-blue-700 dark:text-blue-300" }
       : v >= 50
-      ? { ring: "#d97706", text: "text-amber-700" }
-      : { ring: "#dc2626", text: "text-red-700" };
+      ? { ring: "#d97706", text: "text-amber-700 dark:text-amber-300" }
+      : { ring: "#dc2626", text: "text-red-700 dark:text-red-300" };
 
   return (
     <div className="flex flex-col items-center">
@@ -53,12 +53,12 @@ export function ScoreGauge({
           <span className={cn("text-3xl font-bold tabular-nums", tone.text)}>
             {v}
           </span>
-          <span className="text-[10px] uppercase tracking-wider text-zinc-500">
+          <span className="text-[10px] uppercase tracking-wider text-fg-muted">
             / 100
           </span>
         </div>
       </div>
-      <span className="mt-2 text-xs font-medium text-zinc-600">{label}</span>
+      <span className="mt-2 text-xs font-medium text-fg-muted">{label}</span>
     </div>
   );
 }

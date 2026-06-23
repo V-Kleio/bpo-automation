@@ -207,8 +207,8 @@ export function StepActions({
   }
 
   return (
-    <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50/60 p-3">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="mt-3 rounded-md border border-border bg-surface-2/60 p-3">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
         Actions
       </div>
       <div className="flex flex-wrap gap-2">
