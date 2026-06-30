@@ -17,9 +17,10 @@ import path from "path";
 import {
   getServerConfig,
   selectLinkedInProvider,
+  selectAIProvider,
   type LinkedInProvider,
 } from "@/lib/services/config";
-import { resetAnthropic } from "@/lib/services/claude/client";
+import { resetAIProvider } from "@/lib/services/ai";
 import { resetHubSpotClient } from "@/lib/services/hubspot/client";
 import { resetAdapterCache } from "@/lib/services/linkedin/selector";
 import { resetDbPool } from "@/lib/services/db/client";
@@ -27,7 +28,7 @@ import { resetDbPool } from "@/lib/services/db/client";
 const ENV_PATH = path.resolve(process.cwd(), ".env.local");
 
 export type SettingGroup =
-  | "claude"
+  | "ai"
   | "hubspot"
   | "linkedin_provider"
   | "linkedin_pacing"
@@ -36,6 +37,13 @@ export type SettingGroup =
 export type SettingType = "string" | "secret" | "boolean" | "number" | "enum";
 
 export type EnvKey =
+  | "AI_PROVIDER"
+  | "AI_OPENAI_API_KEY"
+  | "AI_OPENAI_BASE_URL"
+  | "AI_OPENAI_MODEL_ANALYZE"
+  | "AI_OPENAI_MODEL_CHAT"
+  | "AI_OPENAI_STRUCTURED_MODE"
+  | "AI_OPENAI_MAX_TOKENS"
   | "ANTHROPIC_API_KEY"
   | "ANTHROPIC_AUTH_TOKEN"
   | "ANTHROPIC_BASE_URL"
@@ -72,25 +80,42 @@ export interface SettingField {
 // settings API. LINKEDIN_SESSION_PATH is intentionally not editable from
 // the web (path-typed, niche; default is fine).
 export const SETTING_FIELDS: readonly SettingField[] = [
-  // ── Claude / AI ────────────────────────────────────────────────────
+  // ── AI Intelligence ────────────────────────────────────────────────
+  {
+    key: "AI_PROVIDER",
+    label: "AI provider",
+    group: "ai",
+    type: "enum",
+    enumValues: [
+      "auto",
+      "anthropic",
+      "groq",
+      "openrouter",
+      "gemini",
+      "ollama",
+      "custom",
+    ],
+    help: "auto = Anthropic if configured, else the OpenAI-compatible endpoint below. Presets (Groq/OpenRouter/Gemini/Ollama) fill in the base URL automatically; Custom uses the base URL you enter.",
+  },
+  // Anthropic credentials (used when provider = anthropic/auto)
   {
     key: "ANTHROPIC_API_KEY",
     label: "Anthropic API key",
-    group: "claude",
+    group: "ai",
     type: "secret",
     help: "First-party API key (sk-ant-…). Leave blank if using a Claude Max OAuth token.",
   },
   {
     key: "ANTHROPIC_AUTH_TOKEN",
     label: "Anthropic OAuth token",
-    group: "claude",
+    group: "ai",
     type: "secret",
     help: "Claude Max OAuth bearer token; requires a gateway base URL below.",
   },
   {
     key: "ANTHROPIC_BASE_URL",
     label: "Anthropic base URL",
-    group: "claude",
+    group: "ai",
     type: "string",
     placeholder: "https://…",
     help: "Custom SDK base URL (e.g. the Claude Max gateway). Leave blank for the default API.",
@@ -98,24 +123,71 @@ export const SETTING_FIELDS: readonly SettingField[] = [
   {
     key: "ANTHROPIC_ENABLE_WEB_SEARCH",
     label: "Web search for lead analysis",
-    group: "claude",
+    group: "ai",
     type: "enum",
     enumValues: ["auto", "on", "off"],
-    help: "auto = on when using an API key, off when using OAuth (the gateway rejects server-side tools).",
+    help: "Anthropic only. auto = on when using an API key, off when using OAuth (the gateway rejects server-side tools).",
   },
   {
     key: "CLAUDE_MODEL_ANALYZE",
-    label: "Analysis model",
-    group: "claude",
+    label: "Anthropic analysis model",
+    group: "ai",
     type: "string",
     placeholder: "claude-opus-4-7",
   },
   {
     key: "CLAUDE_MODEL_CHAT",
-    label: "Chat model",
-    group: "claude",
+    label: "Anthropic chat model",
+    group: "ai",
     type: "string",
     placeholder: "claude-haiku-4-5",
+  },
+  // OpenAI-compatible credentials (Groq / OpenRouter / Gemini / Ollama / Custom)
+  {
+    key: "AI_OPENAI_API_KEY",
+    label: "OpenAI-compatible API key",
+    group: "ai",
+    type: "secret",
+    help: "API key for the selected provider. Leave blank for a local Ollama endpoint.",
+  },
+  {
+    key: "AI_OPENAI_BASE_URL",
+    label: "OpenAI-compatible base URL",
+    group: "ai",
+    type: "string",
+    placeholder: "https://api.groq.com/openai/v1",
+    help: "Only used when provider = Custom. Presets set this automatically.",
+  },
+  {
+    key: "AI_OPENAI_MODEL_ANALYZE",
+    label: "OpenAI-compatible analysis model",
+    group: "ai",
+    type: "string",
+    placeholder: "llama-3.3-70b-versatile",
+    help: "Examples — Groq: llama-3.3-70b-versatile · OpenRouter: meta-llama/llama-3.3-70b-instruct · Gemini: gemini-2.0-flash · Ollama: llama3.1:8b",
+  },
+  {
+    key: "AI_OPENAI_MODEL_CHAT",
+    label: "OpenAI-compatible chat model",
+    group: "ai",
+    type: "string",
+    placeholder: "llama-3.1-8b-instant",
+  },
+  {
+    key: "AI_OPENAI_STRUCTURED_MODE",
+    label: "Structured output mode",
+    group: "ai",
+    type: "enum",
+    enumValues: ["auto", "tools", "json_object"],
+    help: "How the analysis JSON is requested. auto tries function-calling then falls back to JSON mode. Force json_object for models with weak tool support.",
+  },
+  {
+    key: "AI_OPENAI_MAX_TOKENS",
+    label: "Max output tokens",
+    group: "ai",
+    type: "number",
+    placeholder: "4096",
+    help: "Output token cap for the OpenAI-compatible provider. Free models often cap low — keep ≤ the model's limit.",
   },
   // ── HubSpot ────────────────────────────────────────────────────────
   {
@@ -228,6 +300,7 @@ export const SETTING_FIELDS: readonly SettingField[] = [
 ] as const;
 
 const SECRET_KEYS = new Set<EnvKey>([
+  "AI_OPENAI_API_KEY",
   "ANTHROPIC_API_KEY",
   "ANTHROPIC_AUTH_TOKEN",
   "HUBSPOT_PRIVATE_APP_TOKEN",
@@ -258,6 +331,7 @@ export interface SanitizedField {
 
 export interface SettingsView {
   fields: SanitizedField[];
+  ai: { provider: string; kind: string; reason: string; configured: boolean };
   linkedin: { provider: LinkedInProvider; reason: string };
   anthropic: {
     configured: boolean;
@@ -281,6 +355,10 @@ function maskSecret(value: string): string {
 function displayValue(field: SettingField): string {
   const raw = rawEnv(field.key);
   switch (field.key) {
+    case "AI_PROVIDER":
+      return raw || "auto";
+    case "AI_OPENAI_STRUCTURED_MODE":
+      return raw || "auto";
     case "ANTHROPIC_ENABLE_WEB_SEARCH": {
       const v = raw.toLowerCase();
       if (v === "1" || v === "true") return "on";
@@ -300,6 +378,7 @@ function displayValue(field: SettingField): string {
 export function readCurrentSettings(): SettingsView {
   const cfg = getServerConfig();
   const { provider, reason } = selectLinkedInProvider(cfg);
+  const ai = selectAIProvider(cfg);
   const fields: SanitizedField[] = SETTING_FIELDS.map((f) => {
     const raw = rawEnv(f.key);
     const base: SanitizedField = {
@@ -321,6 +400,12 @@ export function readCurrentSettings(): SettingsView {
   });
   return {
     fields,
+    ai: {
+      provider: ai.provider,
+      kind: ai.kind,
+      reason: ai.reason,
+      configured: ai.kind !== "none",
+    },
     linkedin: { provider, reason },
     anthropic: {
       configured: cfg.anthropic.hasKey,
@@ -350,6 +435,10 @@ type Resolved = string | typeof DELETE;
 function serializeForEnv(field: SettingField, uiValue: string): Resolved {
   const v = uiValue.trim();
   switch (field.key) {
+    case "AI_PROVIDER":
+      return v === "" || v === "auto" ? DELETE : v; // auto = unset (default)
+    case "AI_OPENAI_STRUCTURED_MODE":
+      return v === "" || v === "auto" ? DELETE : v; // auto = unset (default)
     case "ANTHROPIC_ENABLE_WEB_SEARCH":
       if (v === "on") return "1";
       if (v === "off") return "0";
@@ -418,12 +507,31 @@ function validate(resolved: Map<EnvKey, Resolved>): void {
     }
   }
 
-  for (const key of ["ANTHROPIC_BASE_URL", "LINKEDIN_MCP_URL"] as const) {
+  for (const key of [
+    "ANTHROPIC_BASE_URL",
+    "LINKEDIN_MCP_URL",
+    "AI_OPENAI_BASE_URL",
+  ] as const) {
     if (resolved.has(key)) {
       const r = resolved.get(key)!;
       if (r !== DELETE && !isValidUrl(r)) {
         errors[key] = "Must be a valid URL (or blank to unset).";
       }
+    }
+  }
+
+  // Custom OpenAI-compatible provider needs an explicit base URL (presets
+  // supply their own). Validated against the effective, post-update state.
+  if (effective("AI_PROVIDER", "auto") === "custom") {
+    if (!effective("AI_OPENAI_BASE_URL", "")) {
+      errors.AI_OPENAI_BASE_URL = "Required when the provider is Custom.";
+    }
+  }
+
+  if (resolved.has("AI_OPENAI_MAX_TOKENS")) {
+    const r = resolved.get("AI_OPENAI_MAX_TOKENS")!;
+    if (r !== DELETE && (!isIntegerString(r) || Number(r) < 1)) {
+      errors.AI_OPENAI_MAX_TOKENS = "Must be a whole number ≥ 1.";
     }
   }
 
@@ -525,13 +633,23 @@ export function applySettings(
     }
 
     // Rebuild module-cached singletons whose credentials may have changed.
+    // resetAIProvider() drops both the AI provider singleton and the
+    // underlying Anthropic SDK instance, so it covers every AI credential
+    // change (Anthropic auth + provider selection + OpenAI-compatible config).
     const changed = new Set(resolved.keys());
     if (
+      changed.has("AI_PROVIDER") ||
+      changed.has("AI_OPENAI_API_KEY") ||
+      changed.has("AI_OPENAI_BASE_URL") ||
+      changed.has("AI_OPENAI_MODEL_ANALYZE") ||
+      changed.has("AI_OPENAI_MODEL_CHAT") ||
+      changed.has("AI_OPENAI_STRUCTURED_MODE") ||
+      changed.has("AI_OPENAI_MAX_TOKENS") ||
       changed.has("ANTHROPIC_API_KEY") ||
       changed.has("ANTHROPIC_AUTH_TOKEN") ||
       changed.has("ANTHROPIC_BASE_URL")
     ) {
-      resetAnthropic();
+      resetAIProvider();
     }
     if (changed.has("HUBSPOT_PRIVATE_APP_TOKEN")) {
       resetHubSpotClient();

@@ -5,6 +5,12 @@
 import "server-only";
 import fs from "fs";
 import path from "path";
+import {
+  AI_PRESETS,
+  presetBaseURL,
+  isLocalhostURL,
+  type AIProviderId,
+} from "@/lib/services/ai/presets";
 
 function trim(v: string | undefined): string {
   return (v ?? "").trim();
@@ -28,6 +34,19 @@ export function getServerConfig() {
       : webSearchOverride === "0" || webSearchOverride === "false"
         ? false
         : anthropicKey.length > 0;
+  // Generic OpenAI-compatible provider (Groq / OpenRouter / Gemini / Ollama /
+  // Custom). A preset implies its base URL; "custom" reads AI_OPENAI_BASE_URL.
+  const aiProvider = trim(process.env.AI_PROVIDER) || "auto";
+  const openaiKey = trim(process.env.AI_OPENAI_API_KEY);
+  const openaiBaseURL =
+    presetBaseURL(aiProvider) ?? trim(process.env.AI_OPENAI_BASE_URL);
+  const openaiHasKey =
+    openaiKey.length > 0 ||
+    (openaiBaseURL.length > 0 && isLocalhostURL(openaiBaseURL));
+  const openaiMaxTokens = Number(
+    trim(process.env.AI_OPENAI_MAX_TOKENS) || "4096",
+  );
+
   const hubspotToken = trim(process.env.HUBSPOT_PRIVATE_APP_TOKEN);
   const unipileKey = trim(process.env.UNIPILE_API_KEY);
   const unipileAccount = trim(process.env.UNIPILE_ACCOUNT_ID);
@@ -65,6 +84,22 @@ export function getServerConfig() {
         trim(process.env.CLAUDE_MODEL_ANALYZE) || "claude-opus-4-7",
       modelChat:
         trim(process.env.CLAUDE_MODEL_CHAT) || "claude-haiku-4-5",
+    },
+    ai: {
+      provider: aiProvider,
+      openai: {
+        baseURL: openaiBaseURL,
+        apiKey: openaiKey,
+        hasKey: openaiHasKey,
+        modelAnalyze: trim(process.env.AI_OPENAI_MODEL_ANALYZE),
+        modelChat: trim(process.env.AI_OPENAI_MODEL_CHAT),
+        structuredMode:
+          trim(process.env.AI_OPENAI_STRUCTURED_MODE) || "auto",
+        maxTokens:
+          Number.isFinite(openaiMaxTokens) && openaiMaxTokens > 0
+            ? openaiMaxTokens
+            : 4096,
+      },
     },
     hubspot: {
       hasKey: hubspotToken.length > 0,
@@ -131,7 +166,69 @@ export function selectLinkedInProvider(
   return { provider: "mock", reason: "No LinkedIn provider configured" };
 }
 
+// Which reasoning backend is actually live. `provider` is the resolved,
+// user-facing id (never "auto"); `kind` is the adapter family the AI router
+// instantiates. mirrors selectLinkedInProvider's shape.
+export interface AISelection {
+  provider: Exclude<AIProviderId, "auto"> | "none";
+  kind: "anthropic" | "openai-compat" | "none";
+  reason: string;
+}
+
+export function selectAIProvider(
+  cfg: ReturnType<typeof getServerConfig>,
+): AISelection {
+  const p = cfg.ai.provider;
+  const openaiReady = cfg.ai.openai.hasKey && cfg.ai.openai.baseURL.length > 0;
+
+  // Explicit Anthropic.
+  if (p === "anthropic") {
+    return cfg.anthropic.hasKey
+      ? { provider: "anthropic", kind: "anthropic", reason: "AI_PROVIDER=anthropic" }
+      : {
+          provider: "none",
+          kind: "none",
+          reason: "AI_PROVIDER=anthropic but no Anthropic credentials",
+        };
+  }
+
+  // Explicit OpenAI-compatible provider (a preset or custom).
+  if (p !== "auto") {
+    const label = AI_PRESETS[p]?.label ?? "Custom OpenAI-compatible";
+    return openaiReady
+      ? {
+          provider: p as Exclude<AIProviderId, "auto">,
+          kind: "openai-compat",
+          reason: `${label} · ${cfg.ai.openai.baseURL}`,
+        }
+      : {
+          provider: "none",
+          kind: "none",
+          reason: `AI_PROVIDER=${p} but the base URL or API key is incomplete`,
+        };
+  }
+
+  // auto: prefer existing Anthropic credentials (preserves prior behavior),
+  // then fall back to any configured OpenAI-compatible endpoint.
+  if (cfg.anthropic.hasKey) {
+    return {
+      provider: "anthropic",
+      kind: "anthropic",
+      reason: "Anthropic credentials present",
+    };
+  }
+  if (openaiReady) {
+    return {
+      provider: "custom",
+      kind: "openai-compat",
+      reason: `OpenAI-compatible endpoint · ${cfg.ai.openai.baseURL}`,
+    };
+  }
+  return { provider: "none", kind: "none", reason: "No AI provider configured" };
+}
+
 export interface PublicConfig {
+  ai: { configured: boolean; provider: string; kind: string };
   anthropic: { configured: boolean };
   hubspot: { configured: boolean };
   linkedin: {
@@ -145,7 +242,9 @@ export interface PublicConfig {
 export function getPublicFlags(): PublicConfig {
   const cfg = getServerConfig();
   const { provider } = selectLinkedInProvider(cfg);
+  const ai = selectAIProvider(cfg);
   return {
+    ai: { configured: ai.kind !== "none", provider: ai.provider, kind: ai.kind },
     anthropic: { configured: cfg.anthropic.hasKey },
     hubspot: { configured: cfg.hubspot.hasKey },
     linkedin: {

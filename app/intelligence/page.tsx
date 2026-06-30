@@ -8,7 +8,7 @@ export default function IntelligencePage() {
       <PageHeader
         layer={2}
         title="Centralized AI Intelligence"
-        description="Claude analyzes the selected company, qualifies the lead, and drafts a per-stakeholder outreach sequence."
+        description="The AI provider analyzes the selected company, qualifies the lead, and drafts a per-stakeholder outreach sequence."
       />
       <div className="flex-1 min-h-0">
         <Suspense fallback={<div className="p-6 text-sm text-fg-muted">Loading workbench…</div>}>

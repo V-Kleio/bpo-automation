@@ -89,7 +89,7 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
       updateChatMessage(assistantId, {
         content: acc + (acc ? "\n\n" : "") + `_(Stream error: ${msg})_`,
       });
-      toast.error("Ask-Claude stream failed", { description: msg });
+      toast.error("Ask-AI stream failed", { description: msg });
     } finally {
       updateChatMessage(assistantId, { streaming: false });
       setBusy(false);
@@ -105,7 +105,7 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
-            <div className="text-sm font-semibold leading-none">Ask Claude</div>
+            <div className="text-sm font-semibold leading-none">Ask AI</div>
             <div className="mt-0.5 text-[11px] text-fg-muted">
               {companyId ? "Scoped to the selected company" : "Pick a company to ground the chat"}
             </div>
@@ -143,7 +143,7 @@ export function AskAIChat({ companyId }: { companyId: string | null }) {
           <div className="rounded-lg border border-dashed border-border-strong bg-surface p-6 text-center">
             <MessageSquare className="mx-auto mb-2 h-5 w-5 text-fg-subtle" />
             <p className="text-xs text-fg-muted">
-              Ask Claude anything about the selected company — qualification,
+              Ask the AI anything about the selected company — qualification,
               messaging strategy, next moves.
             </p>
           </div>

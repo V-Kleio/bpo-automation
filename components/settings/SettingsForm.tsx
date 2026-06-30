@@ -20,7 +20,7 @@ import { invalidateClientConfig } from "@/lib/services/public-config-client";
 // Mirrors the sanitized view served by /api/settings. Secrets carry only
 // isSet + mask — the server never sends cleartext secret values.
 type SettingGroup =
-  | "claude"
+  | "ai"
   | "hubspot"
   | "linkedin_provider"
   | "linkedin_pacing"
@@ -41,6 +41,7 @@ interface SanitizedField {
 
 interface SettingsView {
   fields: SanitizedField[];
+  ai: { provider: string; kind: string; reason: string; configured: boolean };
   linkedin: { provider: string; reason: string };
   anthropic: {
     configured: boolean;
@@ -55,10 +56,10 @@ const GROUPS: Array<{
   description: string;
 }> = [
   {
-    id: "claude",
-    title: "Claude / AI Intelligence",
+    id: "ai",
+    title: "AI Intelligence",
     description:
-      "Credentials and models for Layer 2 lead analysis and the Ask-Claude chat.",
+      "Pick a reasoning provider for Layer 2 analysis and the Ask-AI chat. Anthropic, or any OpenAI-compatible endpoint — Groq, OpenRouter, Gemini, Ollama, DeepSeek.",
   },
   {
     id: "hubspot",
@@ -233,6 +234,11 @@ export function SettingsForm() {
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
                 <CardTitle>{group.title}</CardTitle>
+                {group.id === "ai" && (
+                  <Badge variant={view.ai.configured ? "success" : "warning"}>
+                    {view.ai.provider} · {view.ai.reason}
+                  </Badge>
+                )}
                 {group.id === "linkedin_provider" && (
                   <Badge
                     variant={PROVIDER_BADGE[view.linkedin.provider] ?? "outline"}
@@ -244,7 +250,7 @@ export function SettingsForm() {
               <CardDescription>{group.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {group.id === "claude" && view.anthropic.mixedAuth && (
+              {group.id === "ai" && view.anthropic.mixedAuth && (
                 <p className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800">
                   Both an API key and an OAuth token are set — the gateway
                   rejects mixed auth. Clear one of them.

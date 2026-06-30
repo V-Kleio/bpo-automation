@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { analyzeCompany } from "@/lib/services/claude/analyze";
-import { getAnthropic } from "@/lib/services/claude/client";
+import { getAIProvider } from "@/lib/services/ai";
 import type { Company, Stakeholder } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +13,10 @@ interface RequestBody {
 const PARALLEL = 3;
 
 export async function POST(request: Request) {
-  if (!getAnthropic()) {
+  const provider = getAIProvider();
+  if (!provider) {
     return NextResponse.json(
-      { error: "Anthropic not configured" },
+      { error: "AI provider not configured" },
       { status: 503 },
     );
   }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
             (s) => s.companyId === company.id,
           );
           try {
-            const result = await analyzeCompany(company, stakeholders);
+            const result = await provider.analyzeCompany(company, stakeholders);
             const line =
               JSON.stringify({
                 companyId: company.id,

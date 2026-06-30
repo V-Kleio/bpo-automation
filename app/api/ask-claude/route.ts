@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { streamChat } from "@/lib/services/claude/chat-stream";
-import { getAnthropic } from "@/lib/services/claude/client";
+import { getAIProvider } from "@/lib/services/ai";
 import type { Company, Stakeholder } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +12,10 @@ interface RequestBody {
 }
 
 export async function POST(request: Request) {
-  if (!getAnthropic()) {
+  const provider = getAIProvider();
+  if (!provider) {
     return NextResponse.json(
-      { error: "Anthropic not configured" },
+      { error: "AI provider not configured" },
       { status: 503 },
     );
   }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   let chat;
   try {
-    chat = await streamChat({
+    chat = await provider.streamChat({
       prompt: body.prompt,
       contextCompanies: body.contextCompanies ?? [],
       contextStakeholders: body.contextStakeholders ?? [],
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         controller.enqueue(
-          encoder.encode(`\n\n[Claude stream error: ${message}]`),
+          encoder.encode(`\n\n[AI stream error: ${message}]`),
         );
       } finally {
         controller.close();

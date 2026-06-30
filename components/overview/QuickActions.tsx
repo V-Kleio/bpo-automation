@@ -23,7 +23,7 @@ export function QuickActions() {
       sub:
         analyzed > 0
           ? `${analyzed} companies analyzed so far`
-          : "Send your first batch through Claude",
+          : "Send your first batch through the AI provider",
       icon: Brain,
       iconClass: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
     },

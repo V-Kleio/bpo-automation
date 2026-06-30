@@ -119,8 +119,8 @@ export interface AIAnalysis {
     growthPotential: string;
     localizationFit: string;
   };
-  // Optional one-line summary of what Claude found while web-searching the
-  // company, so the UI can show "What Claude learned" without re-fetching.
+  // Optional one-line summary of what the AI found while web-searching the
+  // company, so the UI can show "What the AI learned" without re-fetching.
   webResearchSummary?: string;
   generatedMessages: GeneratedMessage[];
   analyzedAt: string;

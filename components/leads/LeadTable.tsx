@@ -221,7 +221,7 @@ export function LeadTable() {
     }
     setRunning(true);
     const ids = Array.from(selected);
-    toast.loading(`Sending ${ids.length} lead(s) to Claude…`, {
+    toast.loading(`Sending ${ids.length} lead(s) to the AI provider…`, {
       id: "analyze",
       duration: 2000,
     });
@@ -244,7 +244,7 @@ export function LeadTable() {
         // Every lead failed — surface the first error so the user can act.
         const first = result.failed[0];
         toast.error(
-          first ? `Claude failed: ${first.error}` : "Claude analysis failed.",
+          first ? `AI failed: ${first.error}` : "AI analysis failed.",
           { id: "analyze", duration: 12000 },
         );
       }

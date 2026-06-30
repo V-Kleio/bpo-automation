@@ -2,7 +2,6 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { getAnthropic } from "./client";
 import { getServerConfig } from "@/lib/services/config";
-import { uid } from "@/lib/utils";
 import {
   ANALYZE_TOOL_NAME,
   ANALYZE_TOOL_DESCRIPTION,
@@ -10,28 +9,9 @@ import {
 } from "./schema";
 import { buildAnalyzeSystemPrompt } from "./prompts/analyze-system";
 import { buildAnalyzeUserPrompt } from "./prompts/analyze-user";
-import type {
-  AIAnalysis,
-  Company,
-  GeneratedMessage,
-  Stakeholder,
-} from "@/lib/types";
-
-interface AnalyzeOneResult {
-  analysis: AIAnalysis;
-  durationMs: number;
-  model: string;
-  cacheReadInputTokens: number;
-  webSearchCount: number;
-}
-
-interface ToolInputShape {
-  priorityScore: number;
-  qualification: AIAnalysis["qualification"];
-  partnership: AIAnalysis["partnership"];
-  webResearchSummary?: string;
-  generatedMessages: Array<Omit<GeneratedMessage, "id">>;
-}
+import { normalizeAnalysis } from "@/lib/services/ai/normalize";
+import type { Company, Stakeholder } from "@/lib/types";
+import type { AnalyzeOneResult } from "@/lib/services/ai/types";
 
 export async function analyzeCompany(
   company: Company,
@@ -114,48 +94,14 @@ export async function analyzeCompany(
     (b) => b.type === "server_tool_use" && b.name === "web_search",
   ).length;
 
-  // Some model versions/gateways wrap the entire tool input inside a
-  // "parameter" key — unwrap it before validation.
-  let rawInput = toolUse.input as Record<string, unknown>;
-  if (
-    Object.keys(rawInput).length === 1 &&
-    "parameter" in rawInput &&
-    typeof rawInput.parameter === "object" &&
-    rawInput.parameter !== null
-  ) {
-    rawInput = rawInput.parameter as Record<string, unknown>;
-  }
-  const input = rawInput as Partial<ToolInputShape>;
-  if (
-    typeof input.priorityScore !== "number" ||
-    !input.qualification ||
-    !input.partnership
-  ) {
-    throw new Error(
-      `submit_lead_analysis returned incomplete payload (stop_reason=${response.stop_reason}, ` +
-        `output_tokens=${response.usage.output_tokens}). ` +
-        `Missing required fields — model may have hit max_tokens. Got keys: ${Object.keys(rawInput).join(", ") || "(empty)"}.`,
-    );
-  }
-  const rawMessages = input.generatedMessages;
-  if (!Array.isArray(rawMessages)) {
-    console.warn(
-      `[analyzeCompany] ${company.name}: generatedMessages missing from tool input ` +
-        `(stop_reason=${response.stop_reason}, output_tokens=${response.usage.output_tokens}). ` +
-        `Saving analysis without messages.`,
-    );
-  }
-  const analysis: AIAnalysis = {
-    priorityScore: input.priorityScore,
-    qualification: input.qualification,
-    partnership: input.partnership,
-    webResearchSummary: input.webResearchSummary?.trim() || undefined,
-    generatedMessages: (rawMessages ?? []).map((m) => ({
-      ...m,
-      id: uid("msg"),
-    })),
-    analyzedAt: new Date().toISOString(),
-  };
+  const analysis = normalizeAnalysis(
+    toolUse.input as Record<string, unknown>,
+    {
+      companyName: company.name,
+      stopReason: response.stop_reason,
+      outputTokens: response.usage.output_tokens,
+    },
+  );
 
   return {
     analysis,

@@ -28,7 +28,7 @@ const LAYERS: Array<{
   {
     layer: 2,
     title: "Centralized AI Intelligence",
-    subline: "Leads analyzed by Claude",
+    subline: "Leads analyzed by AI",
     href: "/intelligence",
     icon: Brain,
     metric: "analyzed",

@@ -1,6 +1,6 @@
 "use client";
 // Client-facing API for AI analysis + chat. Talks to /api/analyze-leads and
-// /api/ask-claude. No mock fallback — when Anthropic is not configured the
+// /api/ask-claude. No mock fallback — when no AI provider is configured the
 // UI surfaces a hard error and refuses to run.
 
 import { toast } from "sonner";
@@ -9,10 +9,10 @@ import { uid } from "@/lib/utils";
 import { getClientConfig } from "./public-config-client";
 import type { AIAnalysis, Company, Stakeholder } from "@/lib/types";
 
-async function isAnthropicConfigured(): Promise<boolean> {
+async function isAIConfigured(): Promise<boolean> {
   try {
     const cfg = await getClientConfig();
-    return cfg.anthropic.configured;
+    return cfg.ai.configured;
   } catch {
     return false;
   }
@@ -42,12 +42,12 @@ export interface AnalyzeResult {
 export async function analyzeLeads(
   companyIds: string[],
 ): Promise<AnalyzeResult> {
-  if (!(await isAnthropicConfigured())) {
-    toast.error("Claude is not configured", {
+  if (!(await isAIConfigured())) {
+    toast.error("AI provider is not configured", {
       description:
-        "Set ANTHROPIC_AUTH_TOKEN (Claude Max) or ANTHROPIC_API_KEY in .env.local and restart.",
+        "Pick a provider and add credentials on the Settings page (Anthropic, or any OpenAI-compatible endpoint).",
     });
-    throw new AIUnavailableError("Anthropic not configured");
+    throw new AIUnavailableError("AI provider not configured");
   }
 
   const state = useStore.getState();
@@ -64,7 +64,7 @@ export async function analyzeLeads(
   state.log({
     layer: 2,
     type: "ai_call",
-    summary: `Sent ${companyIds.length} lead(s) to Claude for analysis`,
+    summary: `Sent ${companyIds.length} lead(s) to the AI provider for analysis`,
     meta: { mode: "real" },
   });
 
@@ -77,18 +77,18 @@ export async function analyzeLeads(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    toast.error("Claude request failed", { description: message });
+    toast.error("AI request failed", { description: message });
     revertAnalyzingStatus(companyIds);
     throw err;
   }
 
   if (!response.ok || !response.body) {
     const detail = await safeReadText(response);
-    toast.error("Claude returned an error", {
+    toast.error("AI provider returned an error", {
       description: detail || `HTTP ${response.status}`,
     });
     revertAnalyzingStatus(companyIds);
-    throw new Error(`Claude HTTP ${response.status}: ${detail}`);
+    throw new Error(`AI provider HTTP ${response.status}: ${detail}`);
   }
 
   const succeeded: string[] = [];
@@ -144,13 +144,13 @@ function handleLine(
   const company = store.companies.find((c) => c.id === line.companyId);
   const name = company?.name ?? line.companyId;
   if (line.error || !line.analysis) {
-    const err = line.error || "Claude returned no analysis";
+    const err = line.error || "AI provider returned no analysis";
     console.error(`[analyzeLeads] ${name} (${line.companyId}) failed:`, err);
     failed.push({ id: line.companyId, name, error: err });
     store.log({
       layer: 2,
       type: "ai_call",
-      summary: `Claude analysis FAILED for ${name}: ${err}`,
+      summary: `AI analysis FAILED for ${name}: ${err}`,
       companyId: line.companyId,
       meta: { mode: "real", error: err },
     });
@@ -160,7 +160,7 @@ function handleLine(
   store.log({
     layer: 2,
     type: "ai_call",
-    summary: `Claude returned priorityScore ${line.analysis.priorityScore} for ${name}`,
+    summary: `AI returned priorityScore ${line.analysis.priorityScore} for ${name}`,
     companyId: line.companyId,
     meta: {
       mode: "real",
@@ -194,8 +194,8 @@ export async function* streamAskAI(
   prompt: string,
   contextCompanyIds: string[],
 ): AsyncGenerator<string, void, void> {
-  if (!(await isAnthropicConfigured())) {
-    yield "Claude is not configured. Set ANTHROPIC_AUTH_TOKEN (Claude Max) or ANTHROPIC_API_KEY in .env.local and restart.";
+  if (!(await isAIConfigured())) {
+    yield "AI provider is not configured. Pick a provider and add credentials on the Settings page (Anthropic, or any OpenAI-compatible endpoint).";
     return;
   }
 
@@ -220,20 +220,20 @@ export async function* streamAskAI(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    yield `\n\n[Claude request failed: ${message}]`;
+    yield `\n\n[AI request failed: ${message}]`;
     return;
   }
 
   if (!response.ok || !response.body) {
     const detail = await safeReadText(response);
-    yield `\n\n[Claude error: ${detail || `HTTP ${response.status}`}]`;
+    yield `\n\n[AI error: ${detail || `HTTP ${response.status}`}]`;
     return;
   }
 
   state.log({
     layer: 2,
     type: "ai_call",
-    summary: `Streaming chat reply from Claude`,
+    summary: `Streaming chat reply from the AI provider`,
     meta: { mode: "real", chatId: uid("chat-call") },
   });
 
